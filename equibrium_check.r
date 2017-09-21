@@ -4,10 +4,10 @@
 library(raster) ## package for reading in model output
 
 ## Dir where you model spinup outputs
-dir = '/Users/dougl/Dropbox/LPX_storage_shed/PI_SPINUP_20170814/'
+dir = '/Users/dougl/Dropbox/LPX_storage_shed/PI_SPINUP_20170823/'
 
 ## start of filename
-fname = 'PISPINUP-'
+fname = 'PISPINUPpt2-'
 
 ## variable to test
 varname = 'fpc_grid'
@@ -47,7 +47,7 @@ nouts = nlayers(dat) ## how many output time slices are there#
 
 
 ## setup plotting window
-par(mfrow = c(2,1))
+par(mfrow = c(2, 3))
 
 ###############################
 ## Check equlibrium          ##
@@ -59,9 +59,13 @@ par(mfrow = c(2,1))
 diff = abs(dat[[nouts]] - dat[[nouts - 1]]) / dat[[nouts]]
 
 ## If NaN is produced, than either a ocean cell or last slice has zero, so in equlibrium
-diff[is.na(diff)] = 0.0
+mask = dat[[nouts]] > 1E36
+dat[[nouts]][mask] = NaN
+diff[mask] = NaN
 
 ## Plots any difference greater than 2%. White = okay, green = not in equlibrium.
+plot(dat[[nouts]])
+plot(diff)
 plot(diff > 0.02)
 
 
@@ -103,6 +107,13 @@ values(mxs) = vmxs
 
 equilPoint = mxs * 0.98
 
-unequal = dat[[nlayers(dat)]] < equilPoint
+dat = dat[[nlayers(dat)]]
+dat[mask] = NaN
+plot(dat)
 
+diff = dat - equilPoint
+diff[diff < 0.0] = 0.0
+plot(diff)
+
+unequal = dat < equilPoint
 plot(unequal)
