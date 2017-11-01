@@ -6,6 +6,10 @@ height = stack(fname, varname = varnames['height'])
 fpc    = stack(fname, varname = varnames['fpc'   ])
 gdd    = stack(fname, varname = varnames['gdd'   ])
 
+cols = c('#114400', '#005555', '#00EE11', '#000088',
+		 '#AA5500', '#777922', '#66DD88', '#22EEFF',
+		 '#FF9922', '#FEFF44', '#AA00FF', '#FFBAAA')
+
 biome_assignment <- function(fpc, height, gdd = NULL,
 							 gdd_threshold = 350, veg_treshold = c(0.6, 0.3),
 							 height_threshold = 10) {
@@ -54,3 +58,8 @@ biome_assignment <- function(fpc, height, gdd = NULL,
 }
 
 c(biome, key) := biome_assignment(fpc, height, gdd)
+biome = convert_pacific_centric_2_regular(biome)
+dev.off()
+
+plot_raster_from_raster(biome, cols = cols, limits = 1.5:11.5, add_legend = FALSE, quick = TRUE)
+legend(x = 'bottomleft', pt.bg = cols, pch = 22, pt.cex = 3, legend = key[, 2], ncol = 1)
