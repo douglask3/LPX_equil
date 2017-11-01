@@ -1,21 +1,7 @@
 ###############################
 ## cfg                       ##
 ###############################
-library(benchmarkMetrics)
-library(gitBasedProjects)
-library(raster)
-library(ncdf4)
-library(rasterExtras)
-library(rasterPlot)
-library(plotrix)
-library(mapdata)
-library(mapplots)
-library(ellipse)
-source("libs/return_multiple_from_functions.r")
-source("libs/convert_pacific_centric_2_regular.r")
-data(worldHiresMapEnv)
-library(raster) ## package for reading in model output
-
+source("cfg.r")
 ## Dir where you model spinup outputs
 dir = '/Users/dougl/Dropbox/LPX_storage_shed/PI_SPINUP_20170823/'
 

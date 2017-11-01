@@ -1,6 +1,7 @@
 ##################################
 ## cfg							##
 ##################################
+source("cfg.r")
 
 ## LPX output with height, gdd and fpc
 fname_in = '/Users/dougl/Dropbox/LPX_storage_shed/Equilibrium Test 2 PI - 20170912 (CASP)/test_R20C_CRUnonclim_PI1-4099.nc'
