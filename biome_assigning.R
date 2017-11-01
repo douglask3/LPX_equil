@@ -1,14 +1,16 @@
-fname = '/Users/dougl/Dropbox/LPX_storage_shed/Equilibrium Test 2 PI - 20170912 (CASP)/test_R20C_CRUnonclim_PI1-4099.nc'
+fname_in = '/Users/dougl/Dropbox/LPX_storage_shed/Equilibrium Test 2 PI - 20170912 (CASP)/test_R20C_CRUnonclim_PI1-4099.nc'
+
+fname_out = 'outputs/biomeOut'
 
 varnames = c(height = 'height', fpc = 'fpc_grid', gdd = 'gdd_grid')
-
-height = stack(fname, varname = varnames['height'])
-fpc    = stack(fname, varname = varnames['fpc'   ])
-gdd    = stack(fname, varname = varnames['gdd'   ])
 
 cols = c('#114400', '#005555', '#00EE11', '#000088',
 		 '#AA5500', '#777922', '#66DD88', '#22EEFF',
 		 '#FF9922', '#FEFF44', '#AA00FF', '#FFBAAA')
+
+height = stack(fname_in, varname = varnames['height'])
+fpc    = stack(fname_in, varname = varnames['fpc'   ])
+gdd    = stack(fname_in, varname = varnames['gdd'   ])
 
 biome_assignment <- function(fpc, height, gdd = NULL,
 							 gdd_threshold = 350, veg_treshold = c(0.6, 0.3),
@@ -19,7 +21,7 @@ biome_assignment <- function(fpc, height, gdd = NULL,
 							'Boreal Forest',
 						'Tropical Savannah', 'Sclerophyll Woodland', 'Temperate Parkland',
 							'Boreal Parkland',
-						'Dry Grass/Shrub', 'Hot Desert', 'Shrub Tundra', 'Tundra'))
+						'Dry Grass or Shrub', 'Hot Desert', 'Shrub Tundra', 'Tundra'))
 		
 	height = sum(height * fpc)
 	vegCover = sum(fpc)
@@ -63,3 +65,11 @@ dev.off()
 
 plot_raster_from_raster(biome, cols = cols, limits = 1.5:11.5, add_legend = FALSE, quick = TRUE)
 legend(x = 'bottomleft', pt.bg = cols, pch = 22, pt.cex = 3, legend = key[, 2], ncol = 1)
+
+comment = key[,1]
+names(comment) = key[,2]
+writeRaster.gitInfo(biome, paste(fname_out, '.nc', sep = ""),
+				    varname = 'biome', comment = comment, overwrite = TRUE)
+writeRaster(biome, paste(fname_out, gitVersionNumber(), '.tif', sep = "-"),
+			format = "GTiff", options = c("COMPRESS = NONE", "PROFILE = BASELINE"), 
+			overwrite = TRUE)
