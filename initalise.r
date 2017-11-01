@@ -12,3 +12,5 @@ install.packages('mapdata')
 install.packages(mapplots)
 install.packages(ellipse)
 install.packages(raster) ## package for reading in model output
+
+setupProjectStructure()
