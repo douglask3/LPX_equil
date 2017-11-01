@@ -64,9 +64,10 @@ plotMap <- function(dat, limits, cols, topPlot) {
 ###############################
 ## check less than 2%	     ##
 ###############################
-plot_within_2_percent <- function(endState, almostEndState, mask, topPlot) {
+plot_within_2_percent <- function(endState, almostEndState, diffYear = 50, 
+								  mask, topPlot) {
 	## absolute difference between last and 2nd to last files, noramalised by end file state
-	pc_diff = 100 * abs(endState - almostEndState) /endState
+	pc_diff = (50 / diffYear) * 100 * abs(endState - almostEndState) / endState
 
 	## If NaN is produced, than either a ocean cell or last slice has zero, so in equlibrium
 	endState[mask] = 0.0
@@ -138,9 +139,10 @@ plot_pft <- function(pft, topPlot = FALSE) {
 	nouts          = nlayers(dat) ## how many output time slices are there#
 	endState       = dat[[nouts]]
 	almostEndState = dat[[nouts - 1]]
+	diffYear       = year[nouts] - year[nouts - 1]
 	mask = endState > 1E36
 
-	plot_within_2_percent(endState, almostEndState, mask, topPlot)
+	plot_within_2_percent(endState, almostEndState, diffYear, mask, topPlot)
 	plot_2_percent_trend(dat, endState, topPlot)
 		
 }
