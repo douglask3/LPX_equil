@@ -1,5 +1,6 @@
 install.packages('devtools')
 library(devtools)
+install_github('douglask3/gitProjectExtras/gitBasedProjects')
 
 install_github('douglask3/benchmarkmetrics/benchmarkMetrics')
 install_bitbucket('douglask3/gitProjectExtras/gitBasedProjects')
