@@ -3,7 +3,7 @@ library(devtools)
 install_github('douglask3/gitProjectExtras/gitBasedProjects')
 
 install_github('douglask3/benchmarkmetrics/benchmarkMetrics')
-install_bitbucket('douglask3/gitProjectExtras/gitBasedProjects')
+install_github('douglask3/gitProjectExtras/gitBasedProjects')
 install.packages('raster')
 install.packages("ncdf4")
 install_bitbucket('douglask3/rasterExtraFuns/rasterExtras')
