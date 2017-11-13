@@ -100,6 +100,9 @@ writeRaster.gitInfo(biome, paste(fname_out, '.nc', sep = ""),
 				    varname = 'biome', comment = comment, overwrite = TRUE)
 
 ## geotiff file
-writeRaster(biome, paste(fname_out, gitVersionNumber(), '.tif', sep = "-"),
-			format = "GTiff", options = c("COMPRESS = NONE", "PROFILE = BASELINE"), 
+writeRaster(biome, paste(fname_out, gitVersionNumber(), '.tiff', sep = "-"),
+			format = "GTiff", datatype='INT1U', options = c("COMPRESS = NONE", "PROFILE = BASELINE"), 
 			overwrite = TRUE)
+			
+
+
