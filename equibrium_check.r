@@ -35,6 +35,8 @@ c(year, order)  := sort(year, index.return = TRUE)
 files = files[order]
 files = paste(dir, files, sep = '/')
 
+pdf('figs/equilibriumCheck.pdf', height = 12, width =5)
+
 ## setup plotting window
 par(mfrow = c(9, 4), mar = rep(0, 4), oma = c(0,0,3,0))
 
@@ -62,11 +64,11 @@ plot_within_2_percent <- function(endState, almostEndState, diffYear = 50,
 	
 	## Plot value at end of run
 	plotMap(endState, state_levels, c('white', 'green'), topPlot)
-	if (topPlot) mtext('Current value', side = 3)
+	if (topPlot) mtext('Current value', side = 3, cex = 0.83)
 	
 	## Plots any difference greater than 2%. White = okay, green = not in equlibrium.
 	plotMap(pc_diff , c(0, 1, 2, 5, 10), c('blue', 'green', 'yellow', 'red'), topPlot)					
-	if (topPlot) mtext('difference from previous value (%)', side = 3)
+	if (topPlot) mtext('difference from\nprevious value (%)', side = 3, cex = 0.83)
 }
 
 ####################################
@@ -108,12 +110,12 @@ plot_2_percent_trend <- function(dat, endState, topPlot) {
 	
 	## Plot this equilibrium point
 	plotMap(equilPoint, state_levels, c('white', 'green'), topPlot)
-	if (topPlot) mtext('Predicted target', side = 3)
+	if (topPlot) mtext('Predicted target', side = 3, cex = 0.83)
 
 	## Plot the difference from this state. Blue = we're there; red = more to run
 	diff = equilPoint - endState
 	plotMap(diff, c(-0.05, -0.02, -0.01, -0.001, 0.001, 0.01, 0.02, 0.05), c('#000099', 'white', '#990000'), topPlot)
-	if (topPlot) mtext('Difference from target', side = 3)
+	if (topPlot) mtext('Difference from target', side = 3, cex = 0.83)
 }
 
 plot_pft <- function(pft, topPlot = FALSE) {
@@ -135,3 +137,4 @@ plot_pft <- function(pft, topPlot = FALSE) {
 
 plot_pft(1, TRUE)
 lapply(2:9, plot_pft)
+dev.off()
