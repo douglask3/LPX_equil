@@ -13,9 +13,11 @@ fname_out = 'outputs/biomeOut'
 varnames = c(height = 'height', fpc = 'fpc_grid', gdd = 'gdd_grid')
 
 ## biome colour for plotting - same order as biome key below.
-cols = c('#114400', '#005555', '#00EE11', '#000088',
-		 '#AA5500', '#777922', '#66DD88', '#22EEFF',
-		 '#FF9922', '#FEFF44', '#AA00FF', '#FFBAAA')
+cols = c(Thf = '#114400', Tdf = '#441100',
+		 wtf = '#005555', tef = '#00EE33', tdf = '#66DD00',
+		 bef = '#000088', bdf = '#330033',
+		 Ts  = '#AA5500', sw  = '#777922', tp = '#66DD88', 
+		 bp  = '#22EEFF', dg  = '#FF9922', hd = '#FEFF44', st = '#BB33FF', t = '#FFBAAA')
 
 ##################################
 ## open							##
@@ -32,9 +34,9 @@ biome_assignment <- function(fpc, height, gdd = NULL,
 							 height_threshold = 10) {
 
 	# matrix describing which number in outputted raster corrisponds to whih biome
-	biome_key = cbind(c(1:12), 
-	                  c('Tropical Forest', 'Warm Temperate Forest', 'Temperate Forest',
-							'Boreal Forest',
+	biome_key = cbind(c(1:15), 
+	                  c('Tropical Humid Forest', 'Tropical Dry Forest', 'Warm Temperate Forest', 'Temperate Evergreen Forest', 'Temperate Deciduous Forest',
+							'Boreal  Evergreen Forest', 'Boreal Deciduous Forest',
 						'Tropical Savannah', 'Sclerophyll Woodland', 'Temperate Parkland',
 							'Boreal Parkland',
 						'Dry Grass or Shrub', 'Hot Desert', 'Shrub Tundra', 'Tundra'))
@@ -50,6 +52,7 @@ biome_assignment <- function(fpc, height, gdd = NULL,
 	arid     = vegCover < veg_treshold[2]
 	grass    = !wood & ! arid
 	
+	evergreen = sum(fpc[[c(2, 5, 6)]]) < sum(fpc[[1, 3, 4, 7]])
 	tropical = sum(fpc[[1:2]]) > 0
 	warmTemp = fpc[[4]] > vegCover/2 & !tropical
 	coldTemp = sum(fpc[[c(3,5)]]) > 0 & !tropical & !warmTemp
@@ -64,18 +67,21 @@ biome_assignment <- function(fpc, height, gdd = NULL,
 	## Assign biomes
 	
 		  #temp	  #life form  #phenology  #height
-	biome[        wood       & tropical &  tall] = 1
-	biome[ warm & wood       & tropical & !tall] = 5
-	biome[        wood       & warmTemp &  tall] = 2
-	biome[ warm & wood       & warmTemp & !tall] = 6
-	biome[        wood       & coldTemp &  tall] = 3
-	biome[ warm & wood       & coldTemp & !tall] = 7
-	biome[        wood       & boreal   &  tall] = 4
-	biome[        wood       & boreal   & !tall] = 8
-	biome[ warm & grass                        ] = 9
-	biome[ warm & arid                         ] = 10
-	biome[!warm                         & !tall] = 11
-	biome[!warm & !wood                        ] = 12
+	biome[        wood       & tropical &  tall &  evergreen] = 1
+	biome[        wood       & tropical &  tall & !evergreen] = 2
+	biome[ warm & wood       & tropical & !tall             ] = 8
+	biome[        wood       & warmTemp &  tall             ] = 3
+	biome[ warm & wood       & warmTemp & !tall             ] = 9
+	biome[        wood       & coldTemp &  tall &  evergreen] = 4
+	biome[        wood       & coldTemp &  tall & !evergreen] = 5
+	biome[ warm & wood       & coldTemp & !tall             ] = 10
+	biome[        wood       & boreal   &  tall &  evergreen] = 6
+	biome[        wood       & boreal   &  tall & !evergreen] = 7
+	biome[        wood       & boreal   & !tall             ] = 11
+	biome[ warm & grass                                     ] = 12
+	biome[ warm & arid                                      ] = 13
+	biome[!warm                         & !tall             ] = 14
+	biome[!warm & !wood                                     ] = 15
 	
 	## remove ocean cells
 	biome[height > 9E9| height == -999] = NaN
@@ -90,7 +96,7 @@ biome = convert_pacific_centric_2_regular(biome)
 ## output        				##
 ##################################
 ## figure
-plot_raster_from_raster(biome, cols = cols, limits = 1.5:11.5, add_legend = FALSE, quick = TRUE)
+plot_raster_from_raster(biome, cols = cols, limits = 1.5:14.5, add_legend = FALSE, quick = TRUE)
 legend(x = 'bottomleft', pt.bg = cols, pch = 22, pt.cex = 3, legend = key[, 2], ncol = 1)
 
 ## netcdf file
@@ -100,9 +106,8 @@ writeRaster.gitInfo(biome, paste(fname_out, '.nc', sep = ""),
 				    varname = 'biome', comment = comment, overwrite = TRUE)
 
 ## geotiff file
-writeRaster(biome, paste(fname_out, gitVersionNumber(), '.tiff', sep = "-"),
-			format = "GTiff", datatype='INT1U', options = c("COMPRESS = NONE", "PROFILE = BASELINE"), 
-			overwrite = TRUE)
+writeRaster(biome, paste(fname_out, gitVersionNumber(), '.tiff', sep = "-"), overwrite = TRUE,
+			format = "GTiff", datatype='INT1U', options = c("COMPRESS = NONE", "PROFILE = BASELINE"))
 			
 
 
