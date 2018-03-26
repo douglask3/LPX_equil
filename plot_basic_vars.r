@@ -57,19 +57,11 @@ dats = lapply(fname_in, open_data)
 ##################################
 ## plot							##
 ##################################
-plotMap <- function(dat, limits, cols, vname) {
-	dat[dat > 9E9] = NaN
-	
-	if (is.infinite(min.raster(dat, na.rm = TRUE))) dat[] = 0.0
-	plot_raster_from_raster(dat, limits = limits, cols = cols, quick = TRUE, plot_loc = c(0.7, 1.35, -0.4,	-0.35),
-						add_legend = TRUE)
-	mtext(vname, side = 1, adj = 0.85, line = -5, font = 1.67)
-}
 
 plotAllMaps <- function(i, mn, lims = limits, col = cols) {
 	dev.new()
 	par(mfrow = c(2, 2), mar = rep(0,4), oma = c(0, 0, 2, 0))
-	mapply(plotMap, i, lims, col, varnames)
+	mapply(plot_SA_Map_standard, i, varnames, lims, col)
 	title(mn, outer = TRUE)
 }
 
