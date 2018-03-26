@@ -13,7 +13,7 @@ grad.raster <- function(r) {
 	d = layer.apply(v, function(i) {r[] = as.vector(i); r})
 
 	m = mean(addLayer(r, d), na.rm = TRUE)
-	return(1.1 * abs(m - r))
+	return((5/4) * abs(m - r))
 }
 
 grad.brick <- function(b) layer.apply(b, grad.raster)
