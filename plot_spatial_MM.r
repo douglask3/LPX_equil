@@ -11,7 +11,7 @@ varname    = 'fpc_grid'
 
 ## Define cols and limits for plotting
 cols   = c("white", "green", "#220000")
-limits = c(0, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1)
+limits = c(0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1)
 			  
 ##################################
 ## open							##
@@ -27,7 +27,8 @@ dats = lapply(fname_in, open_data)
 plotGrad <- function(dat, mn) {
 	grad = mmGrad.brick(dat)
 	plot_SA_Map_standard(grad, mn, limits, cols)
+	return(grad)
 }
 
 par(mfrow = c(1, 2), mar = rep(0, 4))
-mapply(plotGrad, dats, names(dats))
+grads = mapply(plotGrad, dats, names(dats))
