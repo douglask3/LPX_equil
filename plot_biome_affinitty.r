@@ -63,21 +63,6 @@ dats = lapply(fname_in, open_data)
 ## plot							##
 ##################################
 
-
-##############
-
-				 #Hot , Cold, Seasonal, Evegreen
-pftAffinity =
-	rbind(Tbe = c(1   , 0   , 0       , 1       ),
-		  Tbd = c(1   , 0   , 1       , 0       ),
-		  tne = c(0.67, 0.33, 1       , 0       ),
-		  tbe = c(0.67, 0.33, 1       , 0       ),
-		  tbd = c(0.33, 0.67, 0       , 1       ),
-		  bne = c(0   , 1   , 1       , 0       ),
-		  bbd = c(0   , 1   , 0       , 1       ),
-		  c3g = c(0.5 , 0.5 , 0.5     , 0.5     ),
-		  c4g = c(1   , 0   , 0.5     , 0.5     ))
-
 Tree = c(1, 1, 1, 1, 1, 1, 1, 0, 0)
 Evergreen = c(1, 0, 0, 0, 1, 0, 1, 0.5, 0.5)		  
 		  
@@ -85,24 +70,20 @@ Evergreen = c(1, 0, 0, 0, 1, 0, 1, 0.5, 0.5)
 		
 		
 makeAffinity <- function(dat) {
+	vegFrac = sum(dat[['fpc']])
+	
 	Dense = dat[['lai']]
 	Sparse = 1 - Dense
-
-	Trees = which(Tree == 1)
-	treeFrac = sum(dat[['fpc']][[Trees]])
-	vegFrac = sum(dat[['fpc']])
-	#Tall = sum((dat[['height']] * dat[['fpc']])[[Trees]] / treeFrac)
+	
 	Tall = sum((dat[['height']] * dat[['fpc']])) / vegFrac
-	Tall[treeFrac == 0.0] = 0.0
 	Short = 1 - Tall
 
 	Hot = dat[['gdd']]
 	Cold = 1 - Hot
 
-	#EG = sum(Evergreen * dat[['fpc']][[Trees]] / treeFrac)
 	EG = sum(Evergreen * dat[['fpc']]) / vegFrac
-	EG[treeFrac == 0] = 0.5
 	DEC = 1 - EG
+	
 	Aff = addLayer(Dense, Sparse, Tall, Short, Hot, Cold, DEC, EG)
 	names(Aff) = c("Dense", "Sparse", "Tall", "Short",
 				   "Hot", "Cold", "Seasonal", "Evergreen")
@@ -120,7 +101,8 @@ plot_affinity2biome <- function(biome, Aff) {
 		else add_legend = FALSE
 	
 	plot_SA_Map_standard(Affinity, nm, 
-						 seq(0.1, 0.9, 0.1), c("#002200", "#999900", "white"), add_legend = add_legend)	
+						 seq(0.1, 0.9, 0.1), c("#002200", "#999900", "white"), 
+						 add_legend = add_legend)	
 	return(Affinity)
 }
 graphics.off()
