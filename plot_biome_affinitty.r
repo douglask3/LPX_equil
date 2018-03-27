@@ -102,7 +102,7 @@ plot_affinity2biome <- function(biome, Aff) {
 	
 	plot_SA_Map_standard(Affinity, nm, 
 						 seq(0.1, 0.9, 0.1), c("#002200", "#999900", "white"), 
-						 add_legend = add_legend)	
+						 labelss = seq(0, 1, 0.1), add_legend = add_legend)	
 	return(Affinity)
 }
 graphics.off()
