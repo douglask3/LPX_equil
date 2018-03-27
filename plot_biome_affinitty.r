@@ -105,8 +105,14 @@ plot_affinity2biome <- function(biome, Aff) {
 						 labelss = seq(0, 1, 0.1), add_legend = add_legend)	
 	return(Affinity)
 }
+
+plot_Affinitys <- function(Aff) {
+	dev.new()
+	par(mfrow = c(4, 4), mar = rep(0, 4))
+	Affinity = apply(biomeAffinityMatrix, 1, plot_affinity2biome, Aff)
+}
+
 graphics.off()
-par(mfrow = c(4, 4), mar = rep(0, 4))
-Affinity = apply(biomeAffinityMatrix, 1, plot_affinity2biome, Affs[[1]])
+lapply(Affs, plot_Affinitys)
 
 
