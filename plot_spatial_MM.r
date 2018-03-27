@@ -43,3 +43,14 @@ par(mfrow = c(1, 2), mar = rep(0, 4))
 
 ##plot for each experiment
 grads = mapply(plotGrad, dats, names(dats))
+
+dev.new()
+RainForest = c(Tbe = 0.95, Tbd = 0, tne = 0, tbe = 0, tbd = 0,  bne = 0, bbd = 0, c3g = 0.0, c4g = 0.05)
+
+plot_diff_from_rainforest <- function(dat, mn) {
+	diff = mapply(function(i, j) abs(i - j), RainForest, layers2list(dat))
+	diff = sum(layer.apply(diff, function(i) i)) 
+	plot_SA_Map_standard(diff, '', c(0.01, 0.1, 0.2, 0.5, 1.0, 1.5, 1.8, 1.9, 1.99), c("#001100", "#777700", "#FF99FF"))
+	return(diff)
+}
+
