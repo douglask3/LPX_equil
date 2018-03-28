@@ -51,6 +51,8 @@ affinityCovertFuns = list(
 	}
 	)
 
+	Trees =  which(Tree == 1)
+	Grass =  which(Tree != 1)
 ##################################
 ## open							##
 ##################################
@@ -65,8 +67,7 @@ open_data <- function(fname) {
 	
 	dat[['height']] = affinityCovertFuns$height(dat[['height']])
 	dat[['gdd'   ]] = affinityCovertFuns$gdd   (dat[['gdd'   ]])
-	Trees =  which(Tree == 1)
-	Grass =  which(Tree != 1)
+	
 	dat[[ 'Tree.cover']] = affinityCovertFuns$lai   (dat[['lai'   ]][[Trees]], dat[['fpc']][[Trees]])
 	dat[['Grass.cover']] = affinityCovertFuns$lai   (dat[['lai'   ]][[Grass]], dat[['fpc']][[Grass]])
 	
@@ -97,8 +98,6 @@ biomeAffinityMatrix = data.frame(
 ## plot							##
 ##################################
 
-		  
-		
 makeAffinity <- function(dat) {
 	Hot = dat[['gdd']]
 	Cold = 1 - Hot
@@ -107,7 +106,7 @@ makeAffinity <- function(dat) {
 	Grass.cover = dat[['Grass.cover']]
 	Bare.cover = dat[['Bare.cover']]
 	
-	Tall = sum((dat[['height']] * dat[['fpc']])) / sum(dat[['fpc']])
+	Tall = sum((dat[['height']] * dat[['fpc']])[[Trees]]) / sum(dat[['fpc']][[Trees]])
 	Short = 1 - Tall
 
 	
@@ -140,6 +139,19 @@ plot_affinity2biome <- function(biome, Aff) {
 	return(Affinity)
 }
 
+plot_factors <- function(Aff) {
+	dev.new()
+	par(mfrow = c(3, 3), mar = rep(0,4))
+	
+	nms = names(Aff)
+	Aff = layers2list(Aff)
+	
+	mapply(plot_SA_Map_standard, Aff, nms,
+		   MoreArgs = list(cols = c("white", "black"), 
+						   limits = seq(0.1, 0.9, 0.1),labelss = seq(0, 1, 0.1)))
+	
+}
+
 plot_Affinitys <- function(Aff) {
 	dev.new()
 	par(mfrow = c(4, 4), mar = rep(0, 4))
@@ -153,13 +165,17 @@ plot_Affinitys <- function(Aff) {
 			 WAMF = "#330033", COMI = "#33FF33", CGSS = "#993300",
 			 STEP = "#FFFF00", DESE = "#FFAAAA", CGSH = "#772255")
 	
-	dev.new()
+	
 	plot_SA_Map_standard(biome, cols = cols, limits = 0.5 + (1:(length(cols)-1)), add_legend = FALSE)
 	
 	legend(x = -115, y = -10, pt.bg = cols, pch = 22, pt.cex = 3, legend = paste(names(cols), ' '), ncol = 2, cex = 0.67, bty = 'n')
 }
 
 graphics.off()
-lapply(Affs, plot_Affinitys)
+plotAlll <- function(...) {
+	plot_factors(...)
+	plot_Affinitys(...)
+}
+lapply(Affs, plotAlll)
 
 
