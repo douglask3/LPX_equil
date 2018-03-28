@@ -19,19 +19,22 @@ scaleByMax <- function(r, mx) {
 	r = r / mx
 	return(r)
 }	
+
+scaleByMaxMin <- function(r, mn, mx) {
+	r[r < mn] = mn
+	r[r > mx] = mx
+	r = r - mn
+	r = r / (mx - mn)
+	return(r)
+}
 		
 affinityCovertFuns = list(
-	height = function(r, mx = 20)
-		scaleByMax(r, mx)
+	height = function(r, mn = 5, 	mx = 25)
+		scaleByMaxMin(r, mn, mx)
 	,
-	gdd = function(r, mn = 350, mx = 7000) {
-		r[r < mn] = mn
-		
-		r[r > mx] = mx
-		r = r - mn
-		r = r / (mx - mn)
-		return(r)
-	},
+	gdd = function(r, mn = 250, mx = 6570) 
+		scaleByMaxMin(r, mn, mx)
+	,
 	lai = function(r, mx = 6) 
 		scaleByMax(r, mx)
 	
@@ -110,6 +113,19 @@ plot_Affinitys <- function(Aff) {
 	dev.new()
 	par(mfrow = c(4, 4), mar = rep(0, 4))
 	Affinity = apply(biomeAffinityMatrix, 1, plot_affinity2biome, Aff)
+	
+	Affinity =  layer.apply(Affinity, function(i) i)
+	biome = which.min(Affinity)
+	
+	cols = c(Thf = '#114400', Tdf = '#441100',
+		 wtf = '#005555', tef = '#00EE33', tdf = '#66DD00',
+		 bef = '#000088', bdf = '#330033',
+		 Ts  = '#AA5500', sw  = '#777922', tp = '#66DD88', 
+		 bp  = '#22EEFF', dg  = '#FF9922', hd = '#FEFF44', st = '#BB33FF', t = '#FFBAAA')
+	
+	plot_SA_Map_standard(biome, cols = cols, limits = 1.5:14.5, add_legend = FALSE)
+	
+	legend(x = -110, y = -10, pt.bg = cols, pch = 22, pt.cex = 3, legend = paste(names(cols), ' '), ncol = 2, cex = 0.67, bty = 'n')
 }
 
 graphics.off()
