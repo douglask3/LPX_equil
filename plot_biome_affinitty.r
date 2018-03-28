@@ -68,9 +68,6 @@ dats = lapply(fname_in, open_data)
 
 Tree = c(1, 1, 1, 1, 1, 1, 1, 0, 0)
 Evergreen = c(1, 0, 0, 0, 1, 0, 1, 0.5, 0.5)		  
-		  
-
-		
 		
 makeAffinity <- function(dat) {
 	vegFrac = sum(dat[['fpc']])
@@ -109,6 +106,19 @@ plot_affinity2biome <- function(biome, Aff) {
 	return(Affinity)
 }
 
+plot_factors <- function(Aff) {
+	dev.new()
+	par(mfrow = c(3, 3), mar = rep(0,4))
+	
+	nms = names(Aff)
+	Aff = layers2list(Aff)
+	
+	mapply(plot_SA_Map_standard, Aff, nms,
+		   MoreArgs = list(cols = c("white", "black"), 
+						   limits = seq(0.1, 0.9, 0.1),labelss = seq(0, 1, 0.1)))
+	
+}
+
 plot_Affinitys <- function(Aff) {
 	dev.new()
 	par(mfrow = c(4, 4), mar = rep(0, 4))
@@ -129,6 +139,10 @@ plot_Affinitys <- function(Aff) {
 }
 
 graphics.off()
-lapply(Affs, plot_Affinitys)
+plotAlll <- function(...) {
+	plot_factors(...)
+	plot_Affinitys(...)
+}
+lapply(Affs, plotAlll)
 
 
