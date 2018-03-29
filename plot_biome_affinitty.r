@@ -123,41 +123,61 @@ makeAffinity <- function(dat) {
 
 Affs = lapply(dats, makeAffinity)
 
-plot_affinity2biome <- function(biome, Aff) {
+plot_affinity2biome <- function(biome, Aff,
+							    AffCols = c("#002200", "#999900", "white"),
+								AffLims = seq(0.1, 0.9, 0.1),
+								AffLabs = seq(0, 1, 0.1), ...) {
 	
 	nm       = biome[1]
 	biome    = as.numeric(biome[-1])
-	Affinity = sum(abs(Aff - biome), na.rm = TRUE) / (2 * sum(biome, na.rm = TRUE))
-	Affinity[is.na(Aff[[1]])] = NaN
 	
-	if (nm == 'Thf') add_legend = TRUE
+	totAff <- function(A0) {
+		A = sum(abs(A0 - biome), na.rm = TRUE) / (2 * sum(biome, na.rm = TRUE))
+		A[is.na(A0[[1]])] = NaN
+		return(A)
+	}
+	
+	if (is.list(Aff)) {
+		Affinity = lapply(Aff, totAff)
+		Affinity = Affinity[[2]] - Affinity[[1]]
+	} else Affinity = totAff(Aff)
+	
+	if (nm == 'TRFO') add_legend = TRUE
 		else add_legend = FALSE
 	
 	plot_SA_Map_standard(Affinity, nm, 
-						 seq(0.1, 0.9, 0.1), c("#002200", "#999900", "white"), 
-						 labelss = seq(0, 1, 0.1), add_legend = add_legend)	
+						 limits = AffLims, cols = AffCols, 
+						 labelss = AffLabs, add_legend = add_legend)	
 	return(Affinity)
 }
 
-plot_factors <- function(Aff) {
+plot_factors <- function(Aff, FactCols = c("white", "black"),
+						      FactLims = seq(0.1, 0.9, 0.1),
+							  FactLabs = seq(0, 1, 0.1), ...) {
 	dev.new()
 	par(mfrow = c(3, 3), mar = rep(0,4))
 	
+	if (is.list(Aff)) Aff = Aff[[2]] - Aff[[1]]
 	nms = names(Aff)
 	Aff = layers2list(Aff)
 	
 	mapply(plot_SA_Map_standard, Aff, nms,
-		   MoreArgs = list(cols = c("white", "black"), 
-						   limits = seq(0.1, 0.9, 0.1),labelss = seq(0, 1, 0.1)))
+		   MoreArgs = list(cols = FactCols,  
+						   limits = FactLims,
+						   labelss = FactLabs))
 	
 }
 
-plot_Affinitys <- function(Aff) {
+plot_Affinitys <- function(Aff, plotBiome = TRUE, ...) {
 	dev.new()
 	par(mfrow = c(4, 4), mar = rep(0, 4))
-	Affinity = apply(biomeAffinityMatrix, 1, plot_affinity2biome, Aff)
+	
+	Affinity = apply(biomeAffinityMatrix, 1, plot_affinity2biome, Aff, ...)
 	
 	Affinity =  layer.apply(Affinity, function(i) i)
+	
+	if (!plotBiome) return()
+	
 	biome = which.min(Affinity)
 	
 	cols = c(TRFO = "#003311", TSFO = "#009900", TDFO = "#775500",
@@ -178,4 +198,10 @@ plotAlll <- function(...) {
 }
 lapply(Affs, plotAlll)
 
-
+plotAlll(list(Affs[[1]], Affs[[2]]), plotBiome = FALSE,
+		 FactCols = c("#000022", "#0000FF", "white", "#FF0000", "#220000"),
+		 FactLims = c(-0.3, -0.2, -0.1, -0.01, 0.01, 0.1, 0.2, 0.3), 
+		 FactLabs = NULL,
+		 AffCols = c("#002200", "#999900", "white", "#990099", "#000022"),
+		 AffLims = c(-0.3, -0.2, -0.1, -0.01, 0.01, 0.1, 0.2, 0.3),
+		 AffLabs = NULL)
