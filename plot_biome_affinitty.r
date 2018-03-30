@@ -4,7 +4,7 @@
 source("cfg.r")
 
 ## LPX output with height, gdd and fpc
-fname_in = c(PI = '/Users/dougl/Dropbox/LPX_storage_shed/Equilibrium Test 2 PI - 20170912 (CASP)/test_R20C_CRUnonclim_PI1-4099.nc',
+fname_in = c(PI = 'data/PIRUN1FIREON_5380_138_CRUnonclim_PI1-5379.nc',
 		     Paleo = '/Users/dougl/Dropbox/LPX_storage_shed/Equilibrium Test 2 PI - 20170912 (CASP)/test_R20C_CRUnonclim_PI1-1000.nc')
 
 
@@ -38,8 +38,8 @@ affinityCovertFuns = list(
 	gdd = function(r, mn = 250, mx = 6570) 
 		scaleByMaxMin(r, mn, mx)
 	,
-	lai = function(lai, fpc = NULL, mx = 6)  {
-		if (!is.null(fpc)) lai = sum(lai * fpc)
+	lai = function(lai, fpc = NULL, mx = 1)  {
+		if (!is.null(fpc)) lai = sum(fpc)#sum(lai * fpc)
 		r = scaleByMax(lai, mx)
 		return(r)
 	}
