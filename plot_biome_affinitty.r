@@ -107,34 +107,36 @@ biomeCols = c(TRFO = "#003311", TSFO = "#009900", TDFO = "#775500",
 
 
 
-plotAffinnityEqs <- function(affintyLine = TRUE, biomePoints = FALSE, biomeLines = FALSE) {
+plotAffinnityEqs <- function(affintyLine = TRUE, biomePoints = FALSE, biomeLines = FALSE,
+						     biomeN = c(1, 3)) {
 	png(paste('figs/AffinityEquations', affintyLine,  biomePoints, biomeLines, '.png', sep = ''),
 		height = 7, width = 7, units = 'in', res = 300)
 	par(mfcol = c(3, 2), mar = c(3, 2, 2, 2), oma = c(3, 1.4, 0, 1.4))
 	plotAffinnityFuns <- function(x, FUN, labs, rowname, title) {
 		y = affinityCovertFuns[[FUN]](x)
 		if (affintyLine) type = 'l' else type = 'n'
-		plot(x, y, xlab = '', ylab = '', type = type, yaxt = 'n', lwd = 2)
+		plot(x, y, xlab = '', ylab = '', type = type, yaxt = 'n', lwd = 2, col = "grey")
 		axis(2, at = c(0, 1), label = labs)
 		axis(4)
 		mtext(title, cex = 1.2)
 		mtext(FUN, line = 2, side = 1)
 
-		if (biomeLines) {
-			lines(x, abs(biomeAffinityMatrix[1, rowname] - y), col = biomeCols[1], lty = 2, lwd = 2)
-			lines(x, abs(biomeAffinityMatrix[3, rowname] - y), col = biomeCols[3], lty = 3, lwd = 2)
-			pnts = c(1, 3)
-		} else pnts = 1:nrow(biomeAffinityMatrix)
+		if (biomeLines) for (i in 1:length(biomeN)) {
+			bn = biomeN[i]
+			lines(x, abs(biomeAffinityMatrix[bn, rowname] - y), col = biomeCols[bn],
+				  lty = 1 + i, lwd = 2)
+		}
+		
 		if (biomePoints) {
-			x = try(biomeAffinityMatrix0[pnts, FUN], silent = TRUE)
-			if (class(x) == "try-error") x = biomeAffinityMatrix0[pnts, rowname]
+			x = try(biomeAffinityMatrix0[biomeN, FUN], silent = TRUE)
+			if (class(x) == "try-error") x = biomeAffinityMatrix0[biomeN, rowname]
 			
 			y = rep(0, length(x))
 			for (i in unique(x)) {
 				index = which(x == i)
 				y[index] = seq(0, 1, length.out = 30)[1:length(index)]
 			}
-			points(x, y, col = biomeCols[pnts], pch = 19)
+			points(x, y, col = biomeCols[biomeN], pch = 19)
 		}
 	}
 
@@ -150,7 +152,7 @@ plotAffinnityEqs <- function(affintyLine = TRUE, biomePoints = FALSE, biomeLines
 
 	if (biomeLines)
 		legend(x = 'topleft', c('Affinity', 'Tropical Rainforest', 'Savanna'),
-			   col = c('black', biomeCols[c(1,3)]), lty = c(1, 2, 3))
+			   col = c('grey', biomeCols[c(1,3)]), lty = c(1, 2, 3))
 			   
 	if (biomePoints)
 		legend(x = 'bottomright', biomeAffinityMatrix[,1], ncol = 2, col = biomeCols, pch = 19)
