@@ -107,13 +107,14 @@ biomeCols = c(TRFO = "#003311", TSFO = "#009900", TDFO = "#775500",
 
 
 
-plotAffinnityEqs <- function(biomePoints = FALSE, biomeLines = FALSE) {
-	png(paste('figs/AffinityEquations', biomePoints, biomeLines, '.png', sep = ''),
+plotAffinnityEqs <- function(affintyLine = TRUE, biomePoints = FALSE, biomeLines = FALSE) {
+	png(paste('figs/AffinityEquations', affintyLine,  biomePoints, biomeLines, '.png', sep = ''),
 		height = 7, width = 7, units = 'in', res = 300)
 	par(mfcol = c(3, 2), mar = c(3, 2, 2, 2), oma = c(3, 1.4, 0, 1.4))
 	plotAffinnityFuns <- function(x, FUN, labs, rowname, title) {
 		y = affinityCovertFuns[[FUN]](x)
-		plot(x, y, xlab = '', ylab = '', type = 'l', yaxt = 'n', lwd = 2)
+		if (affintyLine) type = 'l' else type = 'n'
+		plot(x, y, xlab = '', ylab = '', type = type, yaxt = 'n', lwd = 2)
 		axis(2, at = c(0, 1), label = labs)
 		axis(4)
 		mtext(title, cex = 1.2)
@@ -160,8 +161,9 @@ plotAffinnityEqs <- function(biomePoints = FALSE, biomeLines = FALSE) {
 }
 
 plotAffinnityEqs()
-plotAffinnityEqs(TRUE)
+plotAffinnityEqs(FALSE, TRUE)
 plotAffinnityEqs(TRUE, TRUE	)
+plotAffinnityEqs(TRUE, TRUE, TRUE)
 
 browser()
 ##################################
