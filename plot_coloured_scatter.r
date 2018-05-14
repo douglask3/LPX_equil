@@ -1,9 +1,8 @@
 ################################
 ## paths, files and paramters ##
 ################################
-source('../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r')
-sourceAllLibs('../rasterextrafuns/rasterPlotFunctions/R/')
-
+library(raster)
+library(rasterPlotFunctions)
 data_dir   = 'data' ## where you data is stored
 
 titles = c('MIROC3.2 - LGM', 'MIROC3.2 - LGM')
@@ -103,7 +102,6 @@ plot3scatter <- function(title, x, xname, y, yname, addLegend, z, zcol, zlevel, 
     
     # add legend when asked
     if(addLegend) Legend(zlevel, zcol, zname)
-   
 }
 
 # plots all plots withb same colopur variable
