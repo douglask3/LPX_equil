@@ -8,14 +8,16 @@ data_dir   = 'data' ## where you data is stored
 titles = c('MIROC3.2 - LGM', 'MIROC3.2 - LGM')
 
 #Note the number of x climate variables must be the same as number of titles.
-x_file     = c('LGM_R20C2_detr_MIROC3.2_hdx_tmp_ave_cropped.nc', ## which climate file you want
-               'LGM_R20C2_detr_MIROC3.2_hdx_pre_ave_cropped.nc') ## along the x-axis
+x_file     = c('LGM_R20C2_detr_MIROC3.2_hdx_tmp_ave_cropped.nc', ## which files to get x-axis
+               'LGM_R20C2_detr_MIROC3.2_hdx_pre_ave_cropped.nc') ## variables from
 
-x_varnames = list(NULL, NULL) ## if NULL, just open whatever variable
-x_layers   = list(NULL, NULL)
+x_varnames = list(NULL, NULL) ## variable name within the file. if NULL, just open whatever variable comes first
+x_layers   = list(NULL, NULL) ## Layers you want to average over from each variable.
+                              ## NULL means select all layers.
 x_scale    = list(1, 12)  ## how much you need to multiply your x-axis climate average. 
                       ## i.e as Mean Annual temp is a straight, there's no need to scale 
-                      ## so we multiply it here by 1.
+                      ## so we multiply it here by 1. Precip is a cumulative annual average
+					  ## from monthly data, so time by 12
 x_names    = list('MAT', 'MAP') ## What we call our x variables on the plot
 
 
@@ -24,27 +26,28 @@ x_names    = list('MAT', 'MAP') ## What we call our x variables on the plot
 y_file     = list('LGM_R20C2_detr_MIROC3.2_hdx_pre_ave_cropped.nc',
                'MIROC_TEST_LGM_FON_5380_138_R20C_CRUnonclim-5379.nc')
 			   
-y_varnames = list(NULL, 'fpc_grid')
-y_layers   = list(NULL, 1:7)			   
-y_scale    = list(12, 100 * 9)  ## i.e as Mean Annual Precip is cummultive, you need to multiply 
-                        ## it by 12 to go from mean monthly to mean annual 
+y_varnames = list(NULL, 'fpc_grid') ## We want fpc_grid  from our 2nd (LPX) y_file
+y_layers   = list(NULL, 1:7)  ## For FPC, we are interested in tree cover, so select 1:7 (LPX tree PFTS).
+	   
+y_scale    = list(12, 100 * 7)  ## he 100 converts from a fraction to a %. The 7 is for the no. pfts.
 y_names    = list('MAP', 'Tree Cover')
 
 
 ## Number of z variables does not need to match no. of x and  y.
-z_file     = 'MIROC_TEST_LGM_FON_5380_138_R20C_CRUnonclim-5379.nc' ## LPX output for scatter color
-z_varnames = c('fpc_grid', 'mfire_frac') ## variable you want to plot
-z_layers   = list(1:7, NULL)  ## Layers you want to average over from each varaible.
-                              ## For FPC, we are interested in tree cover, so select 1:7 (LPX tree PFTS).
-                              ## NULL means select all layers for fire.
-z_names    = c('Tree Cover - %', 'Burnt area') ## what we want our variables to be called on the plot
-z_scale    = c(100 * 9, 100 * 12) ## scaling as per x_scale and y_scale. the 100 converts from a fraction to a %
+z_file     = c('MIROC_TEST_LGM_FON_5380_138_R20C_CRUnonclim-5379.nc',
+			   'MIROC_TEST_LGM_FON_5380_138_R20C_CRUnonclim-5379.nc')
+z_varnames = c('fpc_grid', 'mfire_frac')
+z_layers   = list(1:7, NULL)  
+z_names    = c('Tree Cover - %', 'Burnt area') 
+z_scale    = c(100 * 9, 100 * 12)
 z_cols     = list(c('black', 'yellow', 'green'), ## The colour map stages for out coloured scatter plot. yellow and green is good for red
                   c('black', 'yellow', 'red')) ## yellow and red is good for fire.
                                                ## The first colour (black) is what we want to colour point with no tree cover/fire. 2nd (yellow) is intermediate and 3rd (green or red) is for highest values of tree or fire.
 
-z_levels   = list(c(1, 2, 5, 10, 20, 40, 60, 80), 
-				   7) ## Levels cut offs for colors. See plot legend.
+z_levels   = list(c(1, 2, 5, 10, 20, 40, 60, 80),  ## Levels cut offs for colors. See plot legend
+				   5)							   ## If just a single number is supplied,
+												   ## then that is the number of quantiles
+												   ## to split our data into
 ###############
 ## open data ##
 ###############
@@ -118,7 +121,7 @@ plot3scatter <- function(title, x, xname, y, yname, addLegend, z, zcol, zlevel, 
 
 selectLevels <- function(x, level) {
 	
-	level = quantile(x, seq(0, 1, length.out = level + 2))
+	level = quantile(x, seq(0, 1, length.out = level + 1))
 	level = head(level[-1], -1)
 	level = standard.round(level)
 	level = unique(level)
