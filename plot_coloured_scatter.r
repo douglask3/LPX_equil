@@ -2,25 +2,33 @@
 ## paths, files and paramters ##
 ################################
 library(raster)
-library(rasterPlotFunctions)
+library(rasterPlot)
 data_dir   = 'data' ## where you data is stored
 
 titles = c('MIROC3.2 - LGM', 'MIROC3.2 - LGM')
 
 #Note the number of x climate variables must be the same as number of titles.
 x_file     = c('LGM_R20C2_detr_MIROC3.2_hdx_tmp_ave_cropped.nc', ## which climate file you want
-               'LGM_R20C2_detr_MIROC3.2_hdx_tmp_ave_cropped.nc') ## along the x-axis
-x_scale    = c(1, 1)  ## how much you need to multiply your x-axis climate average. 
+               'LGM_R20C2_detr_MIROC3.2_hdx_pre_ave_cropped.nc') ## along the x-axis
+
+x_varnames = list(NULL, NULL) ## if NULL, just open whatever variable
+x_layers   = list(NULL, NULL)
+x_scale    = list(1, 12)  ## how much you need to multiply your x-axis climate average. 
                       ## i.e as Mean Annual temp is a straight, there's no need to scale 
                       ## so we multiply it here by 1.
-x_names    = c('MAT', 'MAT') ## What we call our x variables on the plot
+x_names    = list('MAT', 'MAP') ## What we call our x variables on the plot
+
+
 
 ## All as with x. 
-y_file     = c('LGM_R20C2_detr_MIROC3.2_hdx_pre_ave_cropped.nc',
-               'LGM_R20C2_detr_MIROC3.2_hdx_pre_ave_cropped.nc')
-y_scale    = c(12, 12)  ## i.e as Mean Annual Precip is cummultive, you need to multiply 
+y_file     = list('LGM_R20C2_detr_MIROC3.2_hdx_pre_ave_cropped.nc',
+               'MIROC_TEST_LGM_FON_5380_138_R20C_CRUnonclim-5379.nc')
+			   
+y_varnames = list(NULL, 'fpc_grid')
+y_layers   = list(NULL, 1:7)			   
+y_scale    = list(12, 100 * 9)  ## i.e as Mean Annual Precip is cummultive, you need to multiply 
                         ## it by 12 to go from mean monthly to mean annual 
-y_names    = c('MAP', 'MAP')
+y_names    = list('MAP', 'Tree Cover')
 
 
 ## Number of z variables does not need to match no. of x and  y.
@@ -40,20 +48,21 @@ z_levels   = list(c(1, 2, 5, 10, 20, 40, 60, 80), c(0.01, 0.02, 0.05, 1, 2, 5, 1
 ## open data ##
 ###############
 
-openDat <- function(filename, scale = 1, layers = NULL, ...) {
+openDat <- function(filename, scale = 1, layers = NULL, varname = NULL) {
     filename = paste(data_dir, filename, sep = '/')
-    r = brick(filename, ...) ## load data
+	if (is.null(varname)) r = brick(filename)
+		else r = brick(filename, varname = varname)## load data
     
-    if (!is.null(layers)) r = r[[layers]] ##reqaired layers (i.e, will load layers 1:7 for fpc to get tree cover
+    if (!is.null(layers)) r = r[[layers]] ##required layers (i.e, will load layers 1:7 for fpc to get tree cover
     if (nlayers(r) > 1) r = mean(r) else r = r[[1]] ## meaning remaining layers
     r = r * scale ## scaling
     r[r > 9E9] = NaN ## setting mask
     return(r)
 }
 
-x = mapply(openDat, x_file, x_scale)
-y = mapply(openDat, y_file, y_scale)
-z = mapply(openDat, z_file, z_scale, z_layers, varname = z_varnames)
+x = mapply(openDat, x_file, x_scale, x_layers, x_varnames)
+y = mapply(openDat, y_file, y_scale, y_layers, y_varnames)
+z = mapply(openDat, z_file, z_scale, z_layers, z_varnames)
 
 ##########
 ## plot ##
