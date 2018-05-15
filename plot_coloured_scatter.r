@@ -43,7 +43,8 @@ z_cols     = list(c('black', 'yellow', 'green'), ## The colour map stages for ou
                   c('black', 'yellow', 'red')) ## yellow and red is good for fire.
                                                ## The first colour (black) is what we want to colour point with no tree cover/fire. 2nd (yellow) is intermediate and 3rd (green or red) is for highest values of tree or fire.
 
-z_levels   = list(c(1, 2, 5, 10, 20, 40, 60, 80), c(0.01, 0.02, 0.05, 1, 2, 5, 10)) ## Levels cut offs for colors. See plot legend.
+z_levels   = list(c(1, 2, 5, 10, 20, 40, 60, 80), 
+				   7) ## Levels cut offs for colors. See plot legend.
 ###############
 ## open data ##
 ###############
@@ -113,11 +114,23 @@ plot3scatter <- function(title, x, xname, y, yname, addLegend, z, zcol, zlevel, 
     if(addLegend) Legend(zlevel, zcol, zname)
 }
 
+selectLevels <- function(x, level) {
+	
+	level = quantile(x, seq(0, 1, length.out = level + 2))
+	level = head(level[-1], -1)
+	level = standard.round(level)
+	level = unique(level)
+	
+	return(level)
+}
+
 # plots all plots withb same colopur variable
 plotZs <-function(z, zcol, zlevel, zname, ...) {
     # convert our colour chose for our z color variable into a full colour map
+	if (length(zlevel) == 1) zlevel = selectLevels(z, zlevel)
+	
     zcol =  make_col_vector(zcol, ncols = length(zlevel) + 1) 
-
+	
     # descide which of the x-y plots will have our color legend
     addLegend = rep(FALSE, length(x))
     addLegend[1] = TRUE
