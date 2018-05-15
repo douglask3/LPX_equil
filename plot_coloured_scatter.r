@@ -37,7 +37,7 @@ z_varnames = c('fpc_grid', 'mfire_frac') ## variable you want to plot
 z_layers   = list(1:7, NULL)  ## Layers you want to average over from each varaible.
                               ## For FPC, we are interested in tree cover, so select 1:7 (LPX tree PFTS).
                               ## NULL means select all layers for fire.
-z_names    = c('Tree Cover', 'Burnt area') ## what we want our variables to be called on the plot
+z_names    = c('Tree Cover - %', 'Burnt area') ## what we want our variables to be called on the plot
 z_scale    = c(100 * 9, 100 * 12) ## scaling as per x_scale and y_scale. the 100 converts from a fraction to a %
 z_cols     = list(c('black', 'yellow', 'green'), ## The colour map stages for out coloured scatter plot. yellow and green is good for red
                   c('black', 'yellow', 'red')) ## yellow and red is good for fire.
@@ -75,16 +75,18 @@ z = mapply(openDat, z_file, z_scale, z_layers, z_varnames)
 par(mfcol = c(length(z), length(x)), mar = c(3.5, 0.1, 0, 1), oma = c(2, 5, 1, 0))
 
 ## Function foradding a legend.
-Legend <- function(zlevel, zcol, zname) {
-    labs = paste(head(zlevel, -1), zlevel[-1], sep = '-')
-    labs = c(paste("<", zlevel[1]),
-             labs,
-             paste(">", tail(zlevel, 1)))
+Legend <- function(zlevel, labs, zcol, zname) {
+	if (is.null(labs)) {
+		labs = paste(head(zlevel, -1), zlevel[-1], sep = '-')
+		labs = c(paste("<", zlevel[1]),
+				 labs,
+				 paste(">", tail(zlevel, 1)))
+	}
     legend(x = 'topleft', legend = labs, pch = 19, col = zcol, ncol = 3, title = zname, bty = 'n')
 }
 
 ## plotting function for individual plot in our grid
-plot3scatter <- function(title, x, xname, y, yname, addLegend, z, zcol, zlevel, zname, yaxt, ...) {
+plot3scatter <- function(title, x, xname, y, yname, addLegend, z, zcol, zlevel, zlabels, zname, yaxt, ...) {
     
     ## remove values not on a common mask
     mask = !is.na(x + y + z)
@@ -111,7 +113,7 @@ plot3scatter <- function(title, x, xname, y, yname, addLegend, z, zcol, zlevel, 
     }
     
     # add legend when asked
-    if(addLegend) Legend(zlevel, zcol, zname)
+    if(addLegend) Legend(zlevel, zlabels, zcol, zname)
 }
 
 selectLevels <- function(x, level) {
@@ -127,8 +129,13 @@ selectLevels <- function(x, level) {
 # plots all plots withb same colopur variable
 plotZs <-function(z, zcol, zlevel, zname, ...) {
     # convert our colour chose for our z color variable into a full colour map
-	if (length(zlevel) == 1) zlevel = selectLevels(z, zlevel)
-	
+	if (length(zlevel) == 1) {
+		zlevel = selectLevels(z, zlevel)
+		zlabels = 1:(length(zlevel) + 1)
+		zname = paste(zname, 'qunantiles', sep = ' - ')
+	} else {
+		zlabels = NULL
+	}
     zcol =  make_col_vector(zcol, ncols = length(zlevel) + 1) 
 	
     # descide which of the x-y plots will have our color legend
@@ -136,7 +143,7 @@ plotZs <-function(z, zcol, zlevel, zname, ...) {
     addLegend[1] = TRUE
 
     # plots all the plots of this colour
-    mapply(plot3scatter, titles, x, x_names, y, y_names, addLegend, MoreArgs = list(z, zcol, zlevel, zname, ...))
+    mapply(plot3scatter, titles, x, x_names, y, y_names, addLegend, MoreArgs = list(z, zcol, zlevel, zlabels, zname, ...))
 }
 
 # decide which of our plots will have a y axis added
