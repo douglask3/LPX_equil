@@ -4,10 +4,10 @@
 source("cfg.r")
 
 ## LPX output with height, gdd and fpc
-fname_in = '/Users/dougl/Dropbox/LPX_storage_shed/Equilibrium Test 2 PI - 20170912 (CASP)/test_R20C_CRUnonclim_PI1-4099.nc'
+fname_in = 'data/Figures_doug/Figure 2_6/4ave_foff.nc'
 
 ## constructed biome output file (for nc and geotiff)
-fname_out = 'outputs/biomeOut'
+fname_out = 'outputs/biomeOut-test'
 
 ## varnames in fname_in
 varnames = c(height = 'height', fpc = 'fpc_grid', gdd = 'gdd_grid')
@@ -29,65 +29,6 @@ gdd    = stack(fname_in, varname = varnames['gdd'   ])
 ##################################
 ## biome function				##
 ##################################
-biome_assignment <- function(fpc, height, gdd = NULL,
-							 gdd_threshold = 350, veg_treshold = c(0.6, 0.3),
-							 height_threshold = 10) {
-
-	# matrix describing which number in outputted raster corrisponds to whih biome
-	biome_key = cbind(c(1:15), 
-	                  c('Tropical Humid Forest', 'Tropical Dry Forest', 'Warm Temperate Forest', 'Temperate Evergreen Forest', 'Temperate Deciduous Forest',
-							'Boreal  Evergreen Forest', 'Boreal Deciduous Forest',
-						'Tropical Savannah', 'Sclerophyll Woodland', 'Temperate Parkland',
-							'Boreal Parkland',
-						'Dry Grass or Shrub', 'Hot Desert', 'Shrub Tundra', 'Tundra'))
-	
-	## calculate cell average height and fraction of cells covered by vegetation
-	height = sum(height * fpc)
-	vegCover = sum(fpc)
-	
-	## bioclimatic thresholds
-	warm     = gdd > gdd_threshold
-	
-	wood     = vegCover > veg_treshold[1]
-	arid     = vegCover < veg_treshold[2]
-	grass    = !wood & ! arid
-	
-	evergreen = sum(fpc[[c(2, 5, 6)]]) < sum(fpc[[1, 3, 4, 7]])
-	tropical = sum(fpc[[1:2]]) > 0
-	warmTemp = fpc[[4]] > vegCover/2 & !tropical
-	coldTemp = sum(fpc[[c(3,5)]]) > 0 & !tropical & !warmTemp
-	boreal = !tropical & !warmTemp & !coldTemp
-	
-	tall     =  height > height_threshold
-	
-	## setup output raster based on shape of input
-	biome = height
-	biome[] = 0.0
-	
-	## Assign biomes
-	
-		  #temp	  #life form  #phenology  #height
-	biome[        wood       & tropical &  tall &  evergreen] = 1
-	biome[        wood       & tropical &  tall & !evergreen] = 2
-	biome[ warm & wood       & tropical & !tall             ] = 8
-	biome[        wood       & warmTemp &  tall             ] = 3
-	biome[ warm & wood       & warmTemp & !tall             ] = 9
-	biome[        wood       & coldTemp &  tall &  evergreen] = 4
-	biome[        wood       & coldTemp &  tall & !evergreen] = 5
-	biome[ warm & wood       & coldTemp & !tall             ] = 10
-	biome[        wood       & boreal   &  tall &  evergreen] = 6
-	biome[        wood       & boreal   &  tall & !evergreen] = 7
-	biome[        wood       & boreal   & !tall             ] = 11
-	biome[ warm & grass                                     ] = 12
-	biome[ warm & arid                                      ] = 13
-	biome[!warm                         & !tall             ] = 14
-	biome[!warm & !wood                                     ] = 15
-	
-	## remove ocean cells
-	biome[height > 9E9| height == -999] = NaN
-	
-	return(list(biome, biome_key))
-}
 
 c(biome, key) := biome_assignment(fpc, height, gdd)
 biome = convert_pacific_centric_2_regular(biome)
