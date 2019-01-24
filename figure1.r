@@ -18,7 +18,7 @@ files = c("a) control" = "4ave_pico2_foff.nc",
 tas_file = 'data/Figures_doug/Figure 2_6/LGM_R20C2_detr_ensemble_hdx_tmp_ave_cropped.nc'
          
 dat = lapply(paste0(dir, files), biome_assignment_from_file, tas_file)
-#dat = lapply(paste0(dir, files), raster)
+
 
 cols = c(Thf = '#114400', Tdf = '#441100',
 		 wtf = '#005555', tef = '#00EE33', tdf = '#66DD00',
@@ -30,7 +30,6 @@ cols = c(Thf = '#114400', Tdf = '#441100',
 r = dat[[2]]
 
 limits = seq(1.5, length.out = length(cols) - 1)
-
 
 
 plot_map_standrd <- function(r, cols, limits, ...) {
@@ -56,16 +55,6 @@ plot_map_standrd <- function(r, cols, limits, ...) {
 }
 
 plot_biomes <- function(r, name) {    
-    ri = r
-    for (i in 1:15) ri[i] = i
-    ri[r ==  2] = 3
-    ri[r ==  6] = 10
-    ri[r ==  7] = 13
-    ri[r ==  9] = 12
-    ri[r == 10] = 13
-    ri[r == 12] = 11
-    ri[r == 11] = 5
-    ri = r
     plot_map_standrd(r, cols, limits)
     mtext.units(name, adj = 0.9, line = -2)   
     return(unique(r))
