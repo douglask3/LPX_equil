@@ -66,9 +66,18 @@ plot_biomes <- function(r, name) {
     plot_map_standrd(ri, cols, limits)
     mtext.units(name, adj = 0.9, line = -2)   
 }
-pdf('figs/Figure1.pdf', width = 5, height = 5)
-par(mfrow = c(2,2), mar = rep(0, 4))
-mapply(plot_biomes, dat, names(files))
-cols = c(cols, 'ice' = "#CCCCCC")
-legend('left', col = cols, legend = names(cols), pch = 15, ncol = 2, pt.cex = 3)
-dev.off()
+
+plotFigure <- function(dat, name) {
+    fname = paste0('figs/Figure1', name, '.pdf')
+    pdf(fname, width = 5, height = 5)
+    par(mfrow = c(2,2), mar = rep(0, 4))
+    mapply(plot_biomes, dat, names(files))
+    cols = c(cols, 'ice' = "#CCCCCC")
+    legend('left', col = cols, legend = names(cols), pch = 15, ncol = 2, pt.cex = 3)
+    dev.off()
+}
+
+plotFigure(dat, '')
+
+dat[-1] = lapply(dat[-1], function(r) {r[r == dat[[1]]] = NaN; r})
+plotFigure(dat, '-diff')
