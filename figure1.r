@@ -8,27 +8,7 @@ library(mapplots)
 sourceAllLibs('../rasterextrafuns/rasterPlotFunctions/R/')
 source("libs/biome_assign.r")
 
-dir = 'data/Figures_doug/Figure 2_6/'
-
-files = c("a) control" = "4ave_pico2_foff.nc",
-          'b) fire only' = "4ave_pico2_fon.nc",
-          'c) low [~CO2~]\nonly' = "4ave_foff.nc" , 
-          "d) fire &\nlow [~CO2~]" = "4ave_fon.nc")
-          
-tas_file = 'data/Figures_doug/Figure 2_6/LGM_R20C2_detr_ensemble_hdx_tmp_ave_cropped.nc'
-         
-dat = lapply(paste0(dir, files), biome_assignment_from_file, tas_file)
-
-
-cols = c(Thf = '#114400', Tdf = '#441100',
-		 wtf = '#005555', tef = '#00EE33', tdf = '#66DD00',
-		 bef = '#000088', bdf = '#330033',
-		 Ts  = '#AA5500', sw  = '#777922', tp = '#66DD88', 
-		 bp  = '#22EEFF', dg  = '#FF9922', hd = '#FEFF44', st = '#BB33FF', t = '#FFBAAA')
-         
- 
-r = dat[[2]]
-
+source("libs/load_biome_outs_and_info.r")
 limits = seq(1.5, length.out = length(cols) - 1)
 
 
@@ -72,6 +52,4 @@ plotFigure <- function(dat, name) {
 }
 
 plotFigure(dat, '')
-
-dat[-1] = lapply(dat[-1], function(r) {r[r == dat[[1]]] = NaN; r})
-plotFigure(dat, '-diff')
+plotFigure(ddat, '-diff')
