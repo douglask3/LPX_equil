@@ -19,7 +19,7 @@ dat = lapply(paste0(dir, files), raster)
 cols = c('#110011', '#990099', '#FF00FF', 'white', '#99FF00', '#00FF00', '#002200')
 limits = c(-0.8, -0.6, -0.4, -0.2, 0.2, 0.4, 0.6, 0.8)
 
-png('figs/figure3.png', height = 7, width = 5, res = 300, units = 'in')
+png('figs/figure5.png', height = 7, width = 5, res = 300, units = 'in')
     layout(rbind(1:2, 3:4, 5), heights = c(1,1, 0.3))
     par( mar = rep(0, 4), oma = c(0, 0, 0, 0.5))
     
