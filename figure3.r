@@ -1,4 +1,5 @@
 graphics.off() 
+source("cfg.r")
 dir = 'data/dmm_csv/'
 
 files = list.files(dir, full.names = TRUE)

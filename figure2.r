@@ -1,10 +1,5 @@
 graphics.off()
-library(ncdf4)
-library(rasterExtras)
-library(rasterPlot)
-library(mapdata)
-library(mapplots)
-sourceAllLibs('../rasterextrafuns/rasterPlotFunctions/R/')
+source("cfg.r")
 source("libs/biome_assign.r")
 
 source("libs/load_biome_outs_and_info.r")
@@ -47,9 +42,10 @@ plotFigure <- function(dat, name, ...) {
     axis(2); axis(1)
     v[[4]] = plotBiomeScatter(dat[[4]], nms[[4]], ...)
     axis(1)
-
+    
     v = sort(unique(unlist(v)))
-    cols = cols[v][-1]
+    cols = cols[v]
+    if (cols[1] == "white") cols = cols[-1]
     
     plot.new()
     par(mar = c(0, 0, 5, 0))
@@ -61,7 +57,7 @@ plotFigure <- function(dat, name, ...) {
     dev.off()
 }
 
-plotFigure( dat, '')
+#plotFigure( dat, '')
 plotFigure(ddat, '-diff')
 plotFigure( dat, '-log', log = 'y')
 plotFigure(ddat, '-diff-log', log = 'y')

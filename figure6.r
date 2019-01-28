@@ -4,10 +4,7 @@ library(rasterExtras)
 library(rasterPlot)
 library(mapdata)
 library(mapplots)
-sourceAllLibs('../rasterextrafuns/rasterPlotFunctions/R/')
-source("libs/biome_assign.r")
-source("libs/openMaskVals.r")
-source("libs/addPointsStandard.r")
+
 
 precip = 'data/Figures_doug/Figure 2_6/LGM_R20C2_detr_ensemble_hdx_pre_ave_cropped.nc'
 

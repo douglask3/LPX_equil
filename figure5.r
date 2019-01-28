@@ -1,11 +1,5 @@
 graphics.off()
-library(ncdf4)
-library(rasterExtras)
-library(rasterPlot)
-library(mapdata)
-library(mapplots)
-sourceAllLibs('../rasterextrafuns/rasterPlotFunctions/R/')
-source("libs/plot_map_standrd.r")
+source("cfg.r")
 
 dir = "data/Figures_doug/Figure 5/"
 

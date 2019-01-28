@@ -1,18 +1,8 @@
 graphics.off()
-library(raster)
-library(ncdf4)
-library(rasterExtras)
-library(rasterPlot)
-library(mapdata)
-library(mapplots)
-sourceAllLibs('../rasterextrafuns/rasterPlotFunctions/R/')
-source("libs/biome_assign.r")
+source("cfg.r")
 
-source("libs/load_biome_outs_and_info.r")
+
 limits = seq(1.5, length.out = length(cols) - 1)
-
-
-
 
 plot_biomes <- function(r, name) {    
     plot_map_standrd(r, cols, limits)
