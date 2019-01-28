@@ -12,12 +12,6 @@ source("libs/load_biome_outs_and_info.r")
 precip = 'data/Figures_doug/Figure 2_6/LGM_R20C2_detr_ensemble_hdx_pre_ave_cropped.nc'
 tas    = 'data/Figures_doug/Figure 2_6/LGM_R20C2_detr_ensemble_hdx_tmp_ave_cropped.nc'
 
-openMaskVals <- function(file) {
-    r = raster(file)
-    r[r > 9E9] = NaN
-    return(r)
-}
-
 precip = openMaskVals(precip) * 12  
 tas    = openMaskVals(tas   )
 
@@ -30,13 +24,8 @@ plotBiomeScatter <- function(r, nm, ...) {
     plot(tas, precip, type = 'n', xlim = c(-5, 26), xaxt = 'n', yaxt = 'n', ...)
 
     col = cols[r]
-    points(tas, precip, pch = 19, cex = 2.5)
-    points(tas, precip, pch = 19, col = col,cex = 2)
-    col = make.transparent(col, 0.9)
-    for (i in 1:20) {
-        index = sample(1:length(tas), length(tas), replace = FALSE)
-        points(tas[index], precip[index], pch = 19, col = col[index], cex = 2*(20-i)/20)
-    }
+    
+    addPointsStandard(tas, precip, col)
     nm = paste(strsplit(nm, '\n')[[1]], collapse=' ')
     
     mtext.units(nm, side = 3, adj = 0.1, line = -1.5)
