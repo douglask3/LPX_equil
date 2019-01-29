@@ -18,7 +18,6 @@ png('figs/figure5.png', height = 7, width = 5, res = 300, units = 'in')
     par( mar = rep(0, 4), oma = c(0, 0, 0, 0.5))
     
     plotMap <- function(dat, nm) { 
-        dat = crop(dat,  c(-108, -33, -60, 25))
         plot_map_standrd(dat, limits = limits, cols = cols, readyCut = FALSE)
         mtext.units(nm, side = 3, line = -3, adj = 0, at = -63)
     }
