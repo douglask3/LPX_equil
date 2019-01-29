@@ -45,6 +45,7 @@ plotFigure <- function(dat, name, ...) {
     
     v = sort(unique(unlist(v)))
     cols = cols[v]
+   
     if (cols[1] == "white") cols = cols[-1]
     
     plot.new()
@@ -57,7 +58,7 @@ plotFigure <- function(dat, name, ...) {
     dev.off()
 }
 
-#plotFigure( dat, '')
+plotFigure( dat, '')
 plotFigure(ddat, '-diff')
 plotFigure( dat, '-log', log = 'y')
 plotFigure(ddat, '-diff-log', log = 'y')
