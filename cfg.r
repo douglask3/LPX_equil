@@ -1,3 +1,8 @@
+source('../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r')
+
+sourceAllLibs()
+sourceAllLibs('../gitProjectExtras/gitBasedProjects/R')
+source('../gitProjectExtras/package_git2r.r')
 config(repository(), user.name="Douglas Kelley", user.email="douglas.i.kelley@gmail.com")
 
 library(benchmarkMetrics)
@@ -10,10 +15,10 @@ library(plotrix)
 library(mapdata)
 library(mapplots)
 library(ellipse)
-source('../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r')
-sourceAllLibs('../gitProjectExtras/gitBasedProjects/R')
-source('../gitProjectExtras/package_git2r.r')
+
 sourceAllLibs('../rasterextrafuns/rasterPlotFunctions/R/')
 sourceAllLibs()
 data(worldHiresMapEnv)
 library(raster) ## package for reading in model output
+
+sourceAllLibs()
