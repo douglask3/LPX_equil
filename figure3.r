@@ -48,19 +48,27 @@ write.csv(ts, file = 'outputs/experiment_ttest.csv')
 #ts = lapply(1:5, function(i) ts[,((i-1)*4+1):(i*4)] > 0.05)
 
 
-png('figs/figure3.pdf', width = 5, height = 5, res = 300, units = 'in')
+png('figs/figure3.png', width = 7, height = 6, res = 300, units = 'in')
     layout(rbind(1, 2), heights = c(1, 0.1))
     par(mar = c(1, 0, 0, 0), oma = c(0, 3, 1, 1))
     plot(c(0, 24),c(0, max(unlist(scores)) + 0.05), type = 'n', xlab = '', ylab = '', xaxt = 'n')
 
     add_boxes <- function(score, at, name) {
         boxplot(score, xaxt = 'n', at = at + 1:4, names = rep('', 4), add = TRUE, col = cols)
-        points(x = at + 1:4, apply(score, 2, mean), pch = 4, lwd = 3, cex = 2.25)
+        x = at + 1:4
+        y = apply(score, 2, mean)
+        mapply(function(i, j) lines(i + c(-0.37, 0.37), rep(j, 2), col = "grey", lwd = 2), x, y)
+        mapply(function(i, j) lines(i + c(-0.37, 0.37), rep(j, 2), lty = 3, lwd = 2), x, y)
+        #points(x = at + 1:4, , pch = 4, lwd = 3, cex = 2.25)
         mtext(name, at = at + 1, adj = 0, side = 1)
     }
 
     mapply(add_boxes, scores, seq(0, length.out = length(scores), by = 5), modNames)
-
+    
+    x = which(ts[1,] > 0.1) 
+    x = x + floor(((x)-1)/4)
+    lapply(x, function(i) lines(i + c(-0.4, 0.4), c(-0.02, -0.02), lwd = 3)) 
+    
     plot(c(0, 1), c(0, 1), type = 'n', axes = FALSE)
     #legend('center', , horiz = TRUE, pch = 19, col = cols)
     mapply(function(i, j) mtext.units(line = -3, i, at = j), expNames,0.125 + c(0, 0.25, 0.5, 0.75))
