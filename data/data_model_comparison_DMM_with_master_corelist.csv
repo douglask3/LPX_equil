@@ -1,0 +1,61 @@
+SITE_NAME,LATITUDE,LONGITUDE,COUNTRY,LGM_POLLEN_BIOME_MARCHANT,BIOME_CONSENSUS,MARCHANT_BIOME_NUMBER,POLLEN_TO_LPX_BIOME_NUMBER,LGM_POLLEN_BINARY,LGM_POLLEN_BIOME_VARIOUS,REFERENCES,CONFIRMED,,
+Lake_Patzcuarco,19.58,-101.58,Mexico,WAMF,WAMF,7,9,0,Dry Forest,"Saporito (1975), Watts and Bradbuy (1982)",,,
+Chalco_Lake,19.5,-99,Mexico,WAMF,WAMF,7,9,0,,Lozano-Garcia and Ortega-Guerrero (1994); LozanoGarcia et al. (1993); OrtegaGuerrero (1992),,,
+Lake_Texcoco,19.44,-99,Mexico,WAMF,WAMF,7,9,0,,Lozano-Garc´?a and Ortega-Guerrero (2009),,,
+Lago_Quexil,16.32,-89.88,Guatemala,WAMF,WAMF,7,9,0,Dry Forest,"Leyden,1984",,,
+El_Valle,8.43,-79.78,Panama,TDFO,TDFO,3,8,0,,"Bush_1995,Piperno,1991",,,
+La_Chonta,8,-82,Costa_Rica,WAMF,WAMF,7,9,0,,,,,
+Fuquene_II,5.45,-73.77,Colombia,CTRF,CTRF,6,3,1,GRASSLAND,VanderHammen_and_Hooghiemstra_2003,,,
+Agua_Blanca,5,-74.45,Colombia,CGSH,CGSH,12,12,0,,Graf (1992); Kuhry (1988b); Kuhry et al. (1983),,,
+Herrera,5,-73.91,Colombia,CTRF,CTRF,6,3,1,,van Geel and van der Hammen (1973),,,
+El_Pinal,4.133,-70.38,Colombia,TDFO,TDFO,3,8,0,SAVANNA,Behling_and_Hooghiemstra_1999,,,
+Timbio__,2.4,-76.6,Colombia,,COMI*,8,3,0,,Wille_et_al._2000,,,
+Lagoa_das_Patas,0.26,-66.68,Brazil,WTRF,WTRF,4,1,1,,De Oliveira (1992),,,
+Lake_Pata,0.26,-66.1,Brazil,WTRF,WTRF,4,1,1,TROPICAL FOREST,Bush_et_al_2004;D'Apolito_et_al_2013,,,
+Lagoa_de_Caco,-2.97,-43.3,Brazil,,SAVANNA*,,8,0,SAVANNA,Ledru_et_al_2002;Siffedine_et_al_2003,,,
+Marine_Core_GeoB 3104–1,-3.67,-37.7,Ocean,,DRYGRASS/SHRUB*,,11,0,DRY GRASS/SHRUBLAND,Behling et al. 2000,,,
+Ciudad Universitaria X,-4.75,-74.18,Colombia,WAMF,WAMF,7,9,0,,van der Hammen and Gonzalez ´ (1960),,,
+SerraSulCarajas,-5,-49.5,Brazil,tdfo,tdfo,3,8,0,SAVANNA/DRY_GRASS,"Abst_et_al_1991;Sifeddine_et_al_1994, Hermanowski_et_al_2012; Reis_et_al_2017",,,
+Katira__,-9,-63,Brazil,TDFO,TDFO,3,8,0,SAVANNA,Van_der_Hammen_Absy_1994,,,
+Lago_do_Saci*,-9.116,-56.26667,Brazil,,SAVANNA*,,8,0,SAVANNA,Fontes_2017,,,
+Laguna_Junin2,-11,-76.18,Peru,CGSH,CGSH,12,12,0,,Hansen and Rodbell (1995),,,
+Laguna_Bella_Vista,-13.58,-61.56,Bolivia,TDFO,TDFO,3,8,0,,Mayle et al. (2000),CHECKED 05/05,,
+Consuelo*,-13.95,-68.983,Peru,,COMI*,,3,1,Cloud_Forest: TROPICAL FOREST,Urrego_et_al_2005,CHECKED 05/05,,
+Chaplin_,-14.4667,-61.0667,Bolivia,tdfo,TDFO,3,8,0,SAVANNA,Burbridge_et_al_2004,CHECKED 05/05,,
+Aguas_Emendadas,-15,-47.57,Brazil,CGSH,CGSH,12,12,0,Savanna,Barberi_1994,CHECKED 04/24,,
+Titicaca*,-16.13,-69.155,Bolivia/Peru,,CGSS*,,12,0,Central_Andrea_Wet_Puna : SCLERO PARKLAND,Baker_et_al_2001,CHECKED 04/24,remove?,
+Lake_Huinamimarca,-16.5,-69,Bolivia,CGSS,CGSS,9,12,0,,Mourguiart et al. (1995); Argollo and Mourguiart (2000),CHECKED 04/24,,
+Crominia,-17.28333333,-49.41666667,Brazil,TDFO,TDFO,3,8,0,SAVANNA,Salgado_Labouriau_et_al_1998,CHECKED 04/24,,
+Wasa Mayu,-17.54,-65.91,Bolvia,STEP,STEP,10,12,0,,Graf (1992),CHECKED 04/24,,
+Siberia_*,-17.83333,-64.718889,Bolivia,dry grass,CGSS*,,12,0,Cloud_Forest_Open_Forest_Puna: SCLERO PARKLAND,Mourguiart_and_Ledru_2003 - possibly desert,CHECKED 04/24,,
+Salitre__,-19,-46.76666667,Brazil,CGSH,CGSH,12,12,0,Mixed_Forest,Ledru_et_al_1996,CHECKED 04/24,,
+Serra_Negra*,-18.95,-46.85,Brazil,,SAVANNA*,,8,0,Cerrado,Oliveira_1992,CHECKED 04/24,,
+GeoB_3229-2*,-19.63472222,-38.71666667,Brazil,,CGSS,,12,0,DRY GRASS,Behling_et_al_2002,CHECKED 04/19,,
+Salar_de_Uyuni*,-20,-68,Bolivia,,DRYGRASS/SHRUB*,,12,0,Montane Grassland,Chepstow_Lusty_et_al_2005: mayle,CHECKED 04/20,,
+Catas_Altas*,?20.083333,?43.36667,Brazil,,DRYGRASS/SHRUB*,,12,0,DRY GRASS,Behling_and_Lichte_1997,CHECKED 04/20,,
+GeoB_3202-1*,-21.61666667,-39.96861111,Brazil,,DRYGRASS/SHRUB*,,12,0,DRY GRASS,Behling_et_al_2002,CHECKED 04/19,,
+Morro_de_Itapeva__,-22.78333333,-45.53333333,Brazil,CGSH,CGSH,12,12,0,DRY GRASS,Behling_1997,CHECKED 04/19,,
+Colonia__*,-23.86666667,-46.70555556,Brazil,,DRYGRASS/SHRUB*,,12,0,Mixed_Forest,"Ledru_et_al_2009 : Related changes in biodiversity, insolation and climate in the Atlantic rainforest since
+the last interglacial",CHECKED 04/18,,
+Curucutu_M*,-23.93333333,-46.65004883,Brazil,,DRYGRASS/SHRUB*,,12,0,Mixed_Forest,"Pessenda_et_al_2009: : The evolution of a tropical rainforest/grassland
+mosaic in southeastern Brazil since 28,000 14C
+yr BP based on carbon isotopes and pollen records,",CHECKED 04/18 NO MAYBE OR MARCHANT?,,
+Volta_Velha*,-26.06666667,-48.63333333,Brazil,,DRYGRASS/SHRUB*,,12,0,DRY GRASS,Behling_and_Negrelle_2001,CHECKED 04/18,,
+Cambara_Sol*,-29.0525,-50.10111111,Brazil,,DRYGRASS/SHRUB*,,12,0,DRY GRASS,Behling_et_al_2004,CHECKED 04/16,,
+Sao_Fran_de_Assis,-29.59,-55.28,Brazil,,DRYGRASS/SHRUB*,,12,0,DRY GRASS,Behling_et_al_2005,CHECKED 04/16,,
+,,,,,,,,,,,,,
+,,,,,,,,,,"Leonhardt, A., & Lorscheitter, M. L. (2010). The last 25,000 years in the Eastern Plateau of Southern Brazil according to Alpes de São Francisco record. Journal of South American Earth Sciences, 29(2), 454-463.",CHECKED 04/16,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,LPX biome legend,
+,,,,,,,,,,,,1,Tropical Humid Forest
+removed,,,,,,,,,,,,2,Tropical Dry Forest
+,,,,,,,,,,,,3,Warm Temperate Forest
+,,,,,,,,,,,,4,Temperate Deciduous Forest
+,,,,,,,,,,,,5,Tropical Savanna
+,,,,,,,,,,,,6,Sclerophyll Woodland
+,,,,,,,,,,,,7,Temperate Parkland
+,,,,,,,,,,,,8,Boreal Parkland
+,,,,,,,,,,,,9,Dry Grass/Shrub
+,,,,,,,,,,,,10,Hot Desert
+,,,,,,,,,,,,11,Shrub Tundra
+,,,,,,,,,,,,12,Tundra
