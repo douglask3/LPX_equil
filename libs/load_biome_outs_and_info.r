@@ -13,9 +13,29 @@ dat = lapply(dat, function(i) i + 1)
 ddat = dat
 ddat[-1] = lapply(ddat[-1], function(r) {r[r == ddat[[1]]] = 1; r})
 
-cols = c(' ' = 'white', Thf = '#114400', Tdf = '#441100',
+      
+cols = c(' ' = 'white'  , Thf = '#343383', Tdf = '#94C424',
+         wtf = 'black', tef = 'black', tdf = 'black',
+         bef = '#black', bdf = '#black',
+         Ts  = '#E98763', sw  = '#C85649', tp = '#C5E000', 
+         bp  = '#910080', dg  = '#FF7C00', hd = '#FFF600', st = '#FF007A', t = '#00A0FB')
+         
+cols = c(' ' = 'white'  , Thf = '#114400', Tdf = '#441100',
          wtf = '#005555', tef = '#00EE33', tdf = '#66DD00',
          bef = '#000088', bdf = '#330033',
          Ts  = '#AA5500', sw  = '#777922', tp = '#66DD88', 
          bp  = '#22EEFF', dg  = '#FF9922', hd = '#FEFF44', st = '#BB33FF', t = '#FFBAAA')
-         
+# Dark green -> light brown 
+#Thf, Tdf, Ts, dg, hd
+#          sw
+#          tp
+#          bp, st, t       
+
+
+   
+cols = c(' ' = 'white'  , Thf = '#002200', Tdf = '#338800',
+         wtf = '#005555', tef = '#00EE33', tdf = '#66DD00',
+         bef = '#000088', bdf = '#330033',
+         Ts  = '#999900', sw  = '#BB9999', tp = '#8844FF', 
+         bp  = '#880088', dg  = '#FFAA00', hd = '#FFFF77', st = '#00AAEE', t = '#99CCFF')
+   
