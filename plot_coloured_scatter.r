@@ -1,8 +1,10 @@
 ################################
 ## paths, files and paramters ##
 ################################
-library(raster)
-library(rasterPlot)
+
+source('../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r')
+sourceAllLibs('../rasterextrafuns/rasterPlotFunctions/R/')
+
 data_dir   = 'data' ## where you data is stored
 
 titles = c('MIROC3.2 - LGM', 'MIROC3.2 - LGM')
@@ -75,6 +77,7 @@ z = mapply(openDat, z_file, z_scale, z_layers, z_varnames)
     # mfcol = c(ncol, nrow) is the plotting grid.
     # mar = c(bottom, left, top, right) is the inner margin (i.e, gap around each plot).
     # oma is the outer margin (gap around the entire grid).
+png('colour_scatter_example.png', height = 7, width = 7, uni = 'in', res = 150)
 par(mfcol = c(length(z), length(x)), mar = c(3.5, 0.1, 0, 1), oma = c(2, 5, 1, 0))
 
 ## Function foradding a legend.
@@ -155,5 +158,6 @@ yaxt[1] = 's'
 
 # plots all the plots
 mapply(plotZs, z, z_cols, z_levels, z_names, yaxt = yaxt)
+dev.off()
 
 #z, z_cols, z_levels
