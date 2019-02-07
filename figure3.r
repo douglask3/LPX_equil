@@ -50,7 +50,7 @@ write.csv(ts, file = 'outputs/experiment_ttest.csv')
 
 png('figs/figure3.png', width = 7, height = 6, res = 300, units = 'in')
     layout(rbind(1, 2), heights = c(1, 0.1))
-    par(mar = c(1, 0, 0, 0), oma = c(0, 3, 1, 1))
+    par(mar = c(1, 0, 0, 0), oma = c(0.5, 3, 0.5, 1))
     plot(c(0, 24),c(0, max(unlist(scores)) + 0.05), type = 'n', xlab = '', ylab = '', xaxt = 'n')
 
     add_boxes <- function(score, at, name) {
