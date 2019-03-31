@@ -1,12 +1,13 @@
 ##################################
 ## cfg							##
 ##################################
+rm(biomeAffinityMatrix)
 source("cfg.r")
 graphics.off()
 
 ## LPX output with height, gdd and fpc
-fname_in = c(PI = 'data/PIRUN1FIREON_5380_138_CRUnonclim_PI1-5379.nc',
-		     Paleo = '/Users/dougl/Dropbox/LPX_storage_shed/Equilibrium Test 2 PI - 20170912 (CASP)/test_R20C_CRUnonclim_PI1-1000.nc')
+fname_in = c(PI = 'data/Figures_doug/Figure 2_6/4ave_pico2_foff.nc',
+		     Paleo = 'data/Figures_doug/Figure 2_6/4ave_fon.nc')
 
 
 ## varnames in fname_in
@@ -17,6 +18,7 @@ varnames = c(height = 'height'  ,
 			 
 Tree      = c(1, 1, 1, 1, 1, 1, 1, 0, 0)
 Evergreen = c(1, 0, 1, 1, 0, 1, 0, NaN, NaN)
+biomeAffinityMatrix[8, c('Seasonal', 'Evergreen')] = c(0.5, 0.5)
 
 scaleByMax <- function(r, mx) {
 	r[r > mx] = mx
@@ -33,15 +35,15 @@ scaleByMaxMin <- function(r, mn, mx) {
 }
 		
 affinityCovertFuns = list(	
-	gdd = function(r, mn = 250, mx = 6570) 
+	gdd = function(r, mn = 350, mx = 700) 
 		scaleByMaxMin(r, mn, mx),
 		
-	height = function(r, mn = 5, 	mx = 25)
+	height = function(r, mn = 0, 	mx = 20)
 		scaleByMaxMin(r, mn, mx)
 	,
-	cover = function(lai, fpc = NULL, mx = 1)  {
+	cover = function(lai, fpc = NULL, mx = 1.0)  {
 		if (!is.null(fpc)) lai = sum(fpc)#sum(lai * fpc)
-		r = scaleByMax(lai, mx)
+        r = scaleByMax(lai, mx)
 		return(r)
 	}
 	,
@@ -69,44 +71,51 @@ open_data <- function(fname) {
 	dat[['height']] = affinityCovertFuns$height(dat[['height']])
 	dat[['gdd'   ]] = affinityCovertFuns$gdd   (dat[['gdd'   ]])
 	
-	dat[[ 'Tree.cover']] = affinityCovertFuns$cover   (dat[['lai'   ]][[Trees]], dat[['fpc']][[Trees]])
-	dat[['Grass.cover']] = affinityCovertFuns$cover   (dat[['lai'   ]][[Grass]], dat[['fpc']][[Grass]])
+    dat[['Dense' ]] = affinityCovertFuns$cover   (dat[['lai'   ]], dat[['fpc']][[Trees]])
+    dat[['Sparse']] = 1 - dat[['Dense' ]]
+	#dat[[ 'Tree.cover']] = affinityCovertFuns$cover   (dat[['lai'   ]][[Trees]], dat[['fpc']][[Trees]])
+	#dat[['Grass.cover']] = affinityCovertFuns$cover   (dat[['lai'   ]][[Grass]], dat[['fpc']][[Grass]])
 	
-	dat[['Grass.cover']] = (1 - dat[['Tree.cover']]) * dat[['Grass.cover']]
-	dat[[ 'Bare.cover']] = 1 - dat[['Tree.cover']] - dat[['Grass.cover']]
+	#dat[['Grass.cover']] = (1 - dat[['Tree.cover']]) * dat[['Grass.cover']]
+	#dat[[ 'Bare.cover']] = 1 - dat[['Tree.cover']] - dat[['Grass.cover']]
 	return(dat)
 }
 
 dats = lapply(fname_in, open_data)
 
-biomeAffinityMatrix = biomeAffinityMatrix0 = 
-					  read.csv('docs/Marchant_affinity.csv', stringsAsFactors= FALSE)
-biomeAffinityMatrix['gdd'] = affinityCovertFuns[['gdd']](biomeAffinityMatrix['gdd'])
-biomeAffinityMatrix['height'] = affinityCovertFuns[['height']](biomeAffinityMatrix['height'])
-biomeAffinityMatrix['seasonal'] = affinityCovertFuns[['seasonal']](biomeAffinityMatrix['seasonal'])
+#biomeAffinityMatrix = biomeAffinityMatrix0 = 
+#					  read.csv('docs/Marchant_affinity.csv', stringsAsFactors= FALSE)
+#biomeAffinityMatrix['gdd'] = affinityCovertFuns[['gdd']](biomeAffinityMatrix['gdd'])
+#biomeAffinityMatrix['height'] = affinityCovertFuns[['height']](biomeAffinityMatrix['height'])
+#biomeAffinityMatrix['seasonal'] = affinityCovertFuns[['seasonal']](biomeAffinityMatrix['seasonal'])
 
-biomeAffinityMatrix = data.frame(
-	biomeAffinityMatrix['Biome'],
-	"Hot" = biomeAffinityMatrix[['gdd']],
-	Cold = 1 - biomeAffinityMatrix[['gdd']],
-	biomeAffinityMatrix[c('Tree.Cover', 'Grass.Cover', 'Bare.Cover')],
-	Tall = biomeAffinityMatrix[['height']],
-	Short = 1 - biomeAffinityMatrix[['height']],
-	Seasonal = biomeAffinityMatrix[['seasonal']],
-	Evergreen = 1 - biomeAffinityMatrix[['seasonal']])
+#biomeAffinityMatrix = data.frame(
+#	biomeAffinityMatrix['Biome'],
+#	"Hot" = biomeAffinityMatrix[['gdd']],
+#	Cold = 1 - biomeAffinityMatrix[['gdd']],
+#	biomeAffinityMatrix[c('Tree.Cover', 'Grass.Cover', 'Bare.Cover')],
+#	Tall = biomeAffinityMatrix[['height']],
+#	Short = 1 - biomeAffinityMatrix[['height']],
+#	Seasonal = biomeAffinityMatrix[['seasonal']],
+#	Evergreen = 1 - biomeAffinityMatrix[['seasonal']])
 
-biomeCols = c(TRFO = "#003311", TSFO = "#009900", TDFO = "#775500",
-		 WTRF = "#003333", WEFO = "#00AAAA", CTRF = "#0033DD", 
-		 WAMF = "#330033", COMI = "#33FF33", CGSS = "#993300",
-		 STEP = "#FFFF00", DESE = "#FFAAAA", CGSH = "#772255")
+biomeCols = cols#c(TRFO = "#003311", TSFO = "#009900", TDFO = "#775500",
+#		 WTRF = "#003333", WEFO = "#00AAAA", CTRF = "#0033DD", 
+#		 WAMF = "#330033", COMI = "#33FF33", CGSS = "#993300",
+#		 STEP = "#FFFF00", DESE = "#FFAAAA", CGSH = "#772255")
 
+#biomeAffinityMatrix = cbind(biomeAffinityMatrix, 
+#        "Tree.Cover" = c(1,1,1,1,1,1,1,0.5, 0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0))
+        
+# biomeAffinityMatrix = cbind(biomeAffinityMatrix,        
+#        "Grass.Cover" = biomeAffinityMatrix[, "Dense"] - biomeAffinityMatrix[, "Tree.Cover"],
+#        "Bare.Cover" = biomeAffinityMatrix[, "Sparse"])
+        
+biomeAffinityMatrix[, "Hot"] = c(1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0)
+biomeAffinityMatrix[, "Cold"] = 1 - biomeAffinityMatrix[, "Hot"]#- c(1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0)
 ######################
 ## Plot Explanation ##
-######################
-
-
-
-
+#####################'
 plotAffinnityEqs <- function(affintyLine = TRUE, biomePoints = FALSE, biomeLines = FALSE,
 						     biomeN = c(1, 3)) {
 	png(paste('figs/AffinityEquations', affintyLine,  biomePoints, biomeLines, '.png', sep = ''),
@@ -145,10 +154,9 @@ plotAffinnityEqs <- function(affintyLine = TRUE, biomePoints = FALSE, biomeLines
 	plotAffinnityFuns(seq(6, 12, 0.1), "seasonal", c('Evergreen', 'Deciduous'), "Seasonal", 'Evergreen/Deciduous')
 	axis(side = 1, at = seq(6, 12, length.out = 6), labels = seq(0, 1, 0.2), line = 3)
 	mtext('Deciduous Cover', line = 5, side = 1)
-
-	plotAffinnityFuns(seq(0, 1, 0.01), "cover", c('Sparse', 'Dense'),  "Tree.Cover",  'Tree cover')
-	plotAffinnityFuns(seq(0, 1, 0.01), "cover", c('Sparse', 'Dense'), "Grass.Cover", 'Grass cover')
-	plotAffinnityFuns(seq(0, 1, 0.01), "cover", c('Barren', 'Covered'),  "Bare.Cover",  'Bare cover')
+    
+	plotAffinnityFuns(seq(0, 1, 0.01), "cover", c('Sparse', 'Dense'),  "Dense",  'Vegetation cover')
+	plotAffinnityFuns(seq(0, 1, 0.01), "cover", c('Barren', 'Covered'),  "Sparse",  'Bare cover')
 
 	if (biomeLines)
 		legend(x = 'topleft', c('Affinity', 'Tropical Rainforest', 'Savanna'),
@@ -167,7 +175,6 @@ plotAffinnityEqs(FALSE, TRUE)
 plotAffinnityEqs(TRUE, TRUE	)
 plotAffinnityEqs(TRUE, TRUE, TRUE)
 
-browser()
 ##################################
 ## plot							##
 ##################################
@@ -176,9 +183,8 @@ makeAffinity <- function(dat) {
 	Hot = dat[['gdd']]
 	Cold = 1 - Hot
 	
-	Tree.cover = dat[['Tree.cover']]
-	Grass.cover = dat[['Grass.cover']]
-	Bare.cover = dat[['Bare.cover']]
+	Dense  = dat[['Dense' ]]
+	Sparse = dat[['Sparse']]
 	
 	Tall = sum((dat[['height']] * dat[['fpc']])[[Trees]]) / sum(dat[['fpc']][[Trees]])
 	Short = 1 - Tall
@@ -187,8 +193,8 @@ makeAffinity <- function(dat) {
 		sum(dat[['fpc']] * dat[['lai']], na.rm = TRUE) ## weight by LAI
 	DEC = 1 - EG
 	
-	Aff = addLayer(Hot, Cold, Tree.cover, Grass.cover, Bare.cover, Tall, Short, DEC, EG)
-	names(Aff) = c( "Hot", "Cold", "Tree.cover", "Grass.cover", "Bare.cover", "Tall", "Short",
+	Aff = addLayer(Hot, Cold, Dense, Sparse, Tall, Short, DEC, EG)
+	names(Aff) = c( "Hot", "Cold", "Dense", "Sparse", "Tall", "Short",
 				   "Seasonal", "Evergreen")
 	return(Aff)
 }
@@ -240,20 +246,31 @@ plot_factors <- function(Aff, FactCols = c("white", "black"),
 	
 }
 
-plot_Affinitys <- function(Aff, plotBiome = TRUE, ...) {
-	dev.new()
-	par(mfrow = c(4, 4), mar = rep(0, 4))
-	
-	Affinity = apply(biomeAffinityMatrix, 1, plot_affinity2biome, Aff, ...)
+plot_Affinitys <- function(Aff, plotBiome = TRUE,                           
+							    AffCols = c("#002200", "#999900", "white"),
+								AffLims = seq(0.1, 0.9, 0.1), dev = TRUE,...) {
+	if (dev) { 
+        dev.new()
+        par(mfrow = c(4, 4), mar = rep(0, 4))
+    }
+	biomeAffinityMatrix =  biomeAffinityMatrix[, c("Biome", names(Affs[[1]]))]
+	Affinity = apply(biomeAffinityMatrix, 1, plot_affinity2biome, Aff, AffCols, AffLims,  ...)
 	
 	Affinity =  layer.apply(Affinity, function(i) i)
 	
+    if (is.list(Aff)) {
+        plot.new()
+        add_raster_legend2(cols = AffCols, limits = AffLims, srt=0,
+                           extend_max = TRUE, extend_min = TRUE, transpose = FALSE, 
+                           plot_loc = c(0.1, 0.9, 0.85, 0.9))
+    }
 	if (!plotBiome) return()
 	
 	biome = which.min(Affinity)
 	
 	
-	plot_SA_Map_standard(biome, cols = biomeCols, limits = 0.5 + (1:(length(biomeCols)-1)), add_legend = FALSE)
+	plot_SA_Map_standard(biome, cols = biomeCols, limits = 0.5 + (1:(length(biomeCols)-1)), 
+                         add_legend = FALSE, readyCut = TRUE)
 	
 	legend(x = -115, y = -10, pt.bg = biomeCols, pch = 22, pt.cex = 3, legend = paste(names(biomeCols), ' '), ncol = 2, cex = 0.67, bty = 'n')
 }
@@ -270,5 +287,17 @@ plotAlll(list(Affs[[1]], Affs[[2]]), plotBiome = FALSE,
 		 FactLims = c(-0.3, -0.2, -0.1, -0.01, 0.01, 0.1, 0.2, 0.3), 
 		 FactLabs = NULL,
 		 AffCols = c("#002200", "#999900", "white", "#990099", "#000022"),
-		 AffLims = c(-0.3, -0.2, -0.1, -0.01, 0.01, 0.1, 0.2, 0.3),
+		 AffLims = c(-0.5, -0.3, -0.2, -0.1, -0.01, 0.01, 0.1, 0.2, 0.3, 0.5),
 		 AffLabs = NULL)
+
+biomeAffinityMatrix = biomeAffinityMatrix[c(1,2, 8, 12, 13),]
+
+png('figs/Affinity.png', height = 7, width = 7, res = 300, units = 'in')
+
+    layout(rbind(1:3,c(4, 5, 0), 6))#, heights = c(1, 1, 0.3))
+    par(mar = rep(0,4))
+    plot_Affinitys(list(Affs[[1]], Affs[[2]]), plotBiome = FALSE,
+             AffCols = c("#002200", "#999900", "white", "#990099", "#000022"),
+             AffLims = c(-0.5, -0.3, -0.2, -0.1, -0.01, 0.01, 0.1, 0.2, 0.3, 0.5), dev = FALSE)
+             
+dev.off()
