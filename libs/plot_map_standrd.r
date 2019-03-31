@@ -1,7 +1,8 @@
-plot_map_standrd <- function(r, cols, limits, readyCut = TRUE, ...) {
+plot_map_standrd <- function(r, cols, limits, readyCut = TRUE, quick = TRUE,...) {
     r = crop(r,  c(-108, -33, -60, 25))
+    
     plot_map <- function(colsi, ...) 
-        plot_raster_from_raster(r, cols = colsi, limits = limits, quick = TRUE, readyCut = readyCut, coast.lwd = NULL, add_legend = FALSE,...)
+        plot_raster_from_raster(r, cols = colsi, limits = limits, quick = quick, readyCut = readyCut, coast.lwd = NULL, add_legend = FALSE,...)
     
     openResampleMask <- function(file, ...) {
         mask = raster(file)
