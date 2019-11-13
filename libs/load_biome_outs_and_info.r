@@ -1,18 +1,21 @@
-dir = 'data/Figures_doug/Figure 2_6/'
+biome_dir = 'data/Figures_doug/Figure 2_6/'
 
-files = c("a) control" = "4ave_pico2_foff.nc",
-          'b) fire only' = "4ave_pico2_fon.nc",
-          'c) low [~CO2~]\nonly' = "4ave_foff.nc" , 
-          "d) fire &\nlow [~CO2~]" = "4ave_fon.nc")
+biome_files = c("a) control" = "4ave_pico2_foff.nc",
+                "b) fire only" = "4ave_pico2_fon.nc",
+                "c) low [~CO2~]\nonly" = "4ave_foff.nc" , 
+                "d) fire &\nlow [~CO2~]" = "4ave_fon.nc")
           
-tas_file = 'data/Figures_doug/Figure 2_6/LGM_R20C2_detr_ensemble_hdx_tmp_ave_cropped.nc'
-         
-dat = lapply(paste0(dir, files), biome_assignment_from_file, tas_file)
-dat = lapply(dat, function(i) i + 1)
+biome_tas_file = 'data/Figures_doug/Figure 2_6/LGM_R20C2_detr_ensemble_hdx_tmp_ave_cropped.nc'
+  
+load_biomes <- function(dir = biome_dir, files = biome_files, tas_file = biome_tas_file, ...) {  
+    dat = lapply(paste0(dir, files), biome_assignment_from_file, tas_file, ...)
+    dat = lapply(dat, function(i) i + 1)
 
-ddat = dat
-ddat[-1] = lapply(ddat[-1], function(r) {r[r == ddat[[1]]] = 1; r})
-   
+    ddat = dat
+    ddat[-1] = lapply(ddat[-1], function(r) {r[r == ddat[[1]]] = 1; r})
+    return(list(dat, ddat, files))
+}
+
 cols = c(' ' = 'white'  , Thf = '#002200', Tdf = '#338800',
          wtf = '#005555', tef = '#00EE33', tdf = '#66DD00',
          bef = '#000088', bdf = '#330033',
