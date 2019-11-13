@@ -18,16 +18,17 @@ png('figs/figure5.png', height = 7, width = 5.35, res = 300, units = 'in')
     par( mar = rep(0, 4), oma = c(0, 0, 0, 0.5))
     
     plotMap <- function(dat, nm) { 
-        plot_map_standrd(dat, limits = limits, cols = cols, readyCut = FALSE)
+        plot_map_standrd(dat, limits = limits, cols = cols, readyCut = FALSE, quick = FALSE)
         mtext.units(nm, side = 3, line = -3, adj = 0, at = -63)
     }
 
     mapply(plotMap, dat, names(files))
 
 
-    addStandardLegend <- function(x, limits, cols, units = '', plot_loc = c(0.2, 0.80, 0.6, 0.7), ylabposScling=1, ...)  {
-        add_raster_legend2(cols, limits, dat = x, srt = 90,
-                   transpose = FALSE, plot_loc = plot_loc, ylabposScling=ylabposScling, oneSideLabels = TRUE, xpd = NA, adj = 1.0, ...)
+    addStandardLegend <- function(x, limits, cols, units = '', plot_loc = c(0.2, 0.80, 0.6, 0.7), ylabposScling=0.1, ...)  {
+        add_raster_legend2(cols, limits, dat = x, srt = 0,
+                   transpose = FALSE, plot_loc = plot_loc, 
+                   ylabposScling=ylabposScling, oneSideLabels = TRUE, xpd = NA, adj = 1.0, extend_min = TRUE, extend_max = TRUE, ...)
         mtext(units, side = 3, line = -3)
     }
     addStandardLegend(dat[[4]], limits, cols, add = FALSE)
