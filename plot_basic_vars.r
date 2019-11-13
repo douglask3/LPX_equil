@@ -83,7 +83,7 @@ dats = lapply(fname_in, open_data)
 
 plotAllMaps <- function(i, dats,lims = limits, col = cols, fnm = '', ...) {
     rs =lapply(dats, function(r) r[[i]])
-	png(paste0('figs/basic_vars-', i, fnm, '.png'), height = 9, width = 7, res = 300, units = 'in')
+	pdf(paste0('figs/basic_vars-', i, fnm, '.pdf'), height = 9, width = 7)#, res = 300, units = 'in')
         layout(rbind(1:2, 3:4, 5), heights = c(1,1,0.18))
         par(mar = rep(0,4), oma = c(0, 0, 2, 0))
         if(length(rs) == 3) biome_files = biome_files[-1]
