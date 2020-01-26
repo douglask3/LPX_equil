@@ -167,7 +167,7 @@ selectVeg <- function(z) {
 x = selectVars('pre')*12
 y = selectVars('tmp')
 
-x = PolarConcentrationAndPhase(x)
+PC = PolarConcentrationAndPhase(x)
 
 z = selectVeg(c4G)
 limits = c(0.0001, 0.001, 0.01, 0.1, 0.5, 0.9, 0.99, 0.999, 0.9999)*100
