@@ -6,7 +6,7 @@ sourceAllLibs('../gitProjectExtras/gitBasedProjects/R')
 source('../gitProjectExtras/package_git2r.r')
 config(repository(), user.name="Douglas Kelley", user.email="douglas.i.kelley@gmail.com")
 
-library(benchmarkMetrics)
+#library(benchmarkMetrics)
 #library(gitBasedProjects)
 library(raster)
 library(ncdf4)
