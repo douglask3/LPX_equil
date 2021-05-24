@@ -1,9 +1,10 @@
 source('../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r')
 
-sourceAllLibs()
 sourceAllLibs('../gitProjectExtras/gitBasedProjects/R')
-source('../gitProjectExtras/package_git2r.r')
-config(repository(), user.name="Douglas Kelley", user.email="douglas.i.kelley@gmail.com")
+source("libs/return_multiple_from_functions.r")
+sourceAllLibs()
+#source('../gitProjectExtras/package_git2r.r')
+#config(repository(), user.name="Douglas Kelley", user.email="douglas.i.kelley@gmail.com")
 
 library(benchmarkMetrics)
 #library(gitBasedProjects)
