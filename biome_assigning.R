@@ -17,7 +17,8 @@ cols = c(Thf = '#114400', Tdf = '#441100',
 		 wtf = '#005555', tef = '#00EE33', tdf = '#66DD00',
 		 bef = '#000088', bdf = '#330033',
 		 Ts  = '#AA5500', sw  = '#777922', tp = '#66DD88', 
-		 bp  = '#22EEFF', dg  = '#FF9922', hd = '#FEFF44', st = '#BB33FF', t = '#FFBAAA')
+		 bp  = '#22EEFF', dg  = '#FF9922', hd = '#FEFF44', 
+                 st = '#BB33FF', t = '#FFBAAA')
 
 ##################################
 ## open							##
