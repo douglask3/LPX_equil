@@ -3,6 +3,22 @@ plotMask <- function(r,...) {
     plot(r, ...)
 }
 
+variable_from_biome <- function(id, gdd_threshold = 350, veg_treshold = c(0.6, 0.3),
+							 height_threshold = 12) {
+
+    ## fpc
+    if (any(sapply(c(1:8), function(i) i == id)))
+        fpc = c(0.6, 0.8, 1.0)
+    else if (id == 9) 
+        fpc = c(0.3, 0.45, 0.6)
+    else if (id == 10) 
+        fpc = c(0.0, 0.15, 0.3)
+    else fpc = c(0.0, 0.3, 0.6)
+
+    names(fpc) = paste0("fpc_grid-", c("Min", "Mid", "Max"))
+    return(fpc)
+}
+
 biome_assignment <- function(fpc, height, gdd = NULL,
 							 gdd_threshold = 350, veg_treshold = c(0.6, 0.3),
 							 height_threshold = 12) {
