@@ -151,9 +151,9 @@ apply2Var <- function(varname, levels, aggFUN, limits, cols, dlimits1, dlimits2,
 ##############################
 ## Connectivity score       ##
 ##############################
-#zscores = mapply(apply2Var,  varnames, levelss, aggFUNs,
-#                 limitss, colss, dlimitss1, dlimitss2, dcolss,
-#                  transs, itranss)
+zscores = mapply(apply2Var,  varnames, levelss, aggFUNs,
+                 limitss, colss, dlimitss1, dlimitss2, dcolss,
+                  transs, itranss)
 
 zscore1 = zscores[[1]][[5]]
 zscore2 = zscores[[2]][[5]] 
@@ -163,22 +163,12 @@ start = c(-70.25, 8.25)
 
 j0 = colFromX(zscore, start[1])
 i0 = rowFromY(zscore, start[2])
-#conn = addLayer(zscore, zscore, zscore, zscore)
-#conn[] = NaN
 
-#conn[[1]][i0,j0] = 0
-#conn[[2]][i0,j0] =  zscore[i0,j0]
-#conn[[3]][i0,j0] =  zscore[i0,j0]
-#conn[[4]][] = 0
-#conn[[4]][is.na(zscore)] = NaN
-
-iijj = lapply(c(-1, 0, 1), function(jj)
-                       sapply(c(-1, 0, 1), function(ii,jj) c(ii,jj), jj)) 
+iijj = lapply(c(-1, 0, 1), function(jj) sapply(c(-1, 0, 1), function(ii,jj) c(ii,jj), jj)) 
 iijj = do.call(cbind, iijj)
 
 findM <- function(i, j, conn, rin, test0 = FALSE)  {
         newRange <- function(ij) {
-            #if (is.na(conn[[1]][ij[1],ij[2]])) return(c(NaN, NaN))
             c(min(conn[[1]][ij[1],ij[2]], rin[i, j]),
               max(conn[[2]][ij[1],ij[2]], rin[i, j]))
         }
@@ -193,18 +183,10 @@ findM <- function(i, j, conn, rin, test0 = FALSE)  {
         test = iijj[1,] <nrow(conn[[3]]) & iijj[2,] <ncol(conn[[3]])
         iijj = iijj[,test]
         iijj = t(iijj[,!is.na(apply(iijj, 2, function(i) conn[[1]][i[1], i[2]]))])
-        #if (min(dim(iijj))>1) browser()
+       
         out =  whichMinD(apply(iijj, 1, newRange))
-        if (is.null(out)) return(conn)
-        #out = lapply(c(-1, 0, 1)+j, function(jj) sapply(c(-1, 0, 1)+i, newRange, jj))  
-        #out = whichMinD(do.call(cbind, out)    )
-        #finRange <- function(r, FUN)
-        #     FUN(c(rin[i,j], r[(i-1):(i+1), (j-1):(j+1)]), na.rm = TRUE)
-        #min = finRange(conn[[1]], min)
-        #max = finRange(conn[[1]], max)          
-        conn[[1]][i,j] = out[1]
-        conn[[2]][i,j] = out[2] 
-        conn[[3]][i,j] = out[3]   
+        if (is.null(out)) return(conn)      
+        for  (lr in 1:3) conn[[i]][i,j] = out[i]  
         conn
 } 
 initaliseRW <- function(rin) {
