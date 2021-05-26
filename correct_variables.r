@@ -15,41 +15,49 @@ pattern = '_fon'
 
 mod_files = list.files(mod_dir, pattern = pattern, full.name = TRUE)
 tas_files = list.files(tas_dir, full.names = TRUE) 
-varnames = list(gdd = "gdd", height = c("height", "fpc_grid"), fpc = "fpc_grid")
+varnames = list(evergreen = "evergreen",
+                gdd = "gdd", height = c("height", "fpc_grid"), fpc = "fpc_grid")
 
 blankFun <- function(i) i
-levelss = list(NaN, 1:7, 1:9)
-aggFUNs = list(blankFun, mean, sum)
+levelss = list(1:7, NaN, 1:7, 1:9)
+aggFUNs = list(blankFun, blankFun, mean, sum)
 
 logN <- function(x, n= length(dats[[1]])) log(x+1/n)
-transs  = list(logN, logN, logit)
-itranss = list(exp, exp, logistic)
+transs  = list(logit, logN, logN, logit)
+itranss = list(logistic, exp, exp, logistic)
 
-limitss = list(c(0, 100, 200, 300, 350, 400, 450),
+limitss = list(c(0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95),
+               c(0, 100, 200, 300, 350, 400, 450),
                c(0, 0.1, 0.2, 0.5, 1, 2, 4, 6, 8),
                c(0, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9))
-colss = list(rev(c('#d73027','#f46d43','#fdae61','#fee090','#ffffbf',
+colss = list(c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3',
+               '#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e','#003c30'),
+             rev(c('#d73027','#f46d43','#fdae61','#fee090','#ffffbf',
                    '#e0f3f8','#abd9e9','#74add1','#4575b4')),
              c('#fff7fb','#ece2f0','#d0d1e6','#a6bddb','#67a9cf',
                '#3690c0','#02818a','#016c59','#014636'),
              c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679',
                '#41ab5d','#238443','#006837','#004529'))
 
-dlimitss1 = list(seq(-0.5, 0.5, 0.5),
+dlimitss1 = list(seq(-4, 2),
+                 seq(-0.5, 0.5, 0.5),
                  c(-1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2),
                  seq(-4, 4))
-dlimitss2 = list(c(-140, -120, -100, -80, 60, -40, -20, 0, 20),
+dlimitss2 = list(c(-0.5, -0.2, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.2, 0.5),
+                 c(-140, -120, -100, -80, 60, -40, -20, 0, 20),
                  c(-6, -4, -2, -1, 1, 2, 4, 6),
                  c(-0.5, -0.4, -0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 0.4, 0.5))
-dcolss = list(
-(c('#40004b','#762a83','#9970ab','#c2a5cf',
-                    '#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b')),
+dcolss = list(c('#8e0152','#c51b7d','#de77ae','#f1b6da','#fde0ef',
+                 '#f7f7f7','#e6f5d0','#b8e186','#7fbc41','#4d9221','#276419'),
+              rev(c('#7f3b08','#b35806','#e08214','#fdb863','#fee0b6',
+                    '#f7f7f7','#d8daeb','#b2abd2','#8073ac','#542788','#2d004b')),
+              c('#40004b','#762a83','#9970ab','#c2a5cf',
+                    '#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b'),
               rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5',
                     '#c7eae5','#80cdc1','#35978f','#01665e')))
 
 zlimits =  c(-4, -3, -2, -1, -0.1, 0.1, 1, 2, 3, 4)
 zcols = rev(c('#7f3b08','#b35806','#e08214','#fdb863','#fee0b6','#f7f7f7','#d8daeb','#b2abd2','#8073ac','#542788','#2d004b'))
-
 
 conn_cols = c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e',
               '#78c679','#41ab5d','#238443','#006837','#004529')
@@ -80,6 +88,12 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
             dat = dat1*dat2/sum(dat2)                     
         } else if (varname == 'gdd') {
             dat = 500*(raster(cfile) > 2)
+        } else if (varname == "evergreen") {
+            dat = brick(file, varname = "fpc_grid") [[1:7]]  
+            datt = sum(dat) 
+            dat = sum(dat[[c(1, 3, 4, 6)]])/datt
+            dat[datt>9E9] = NaN
+            dat[datt==0] = 0
         } else {
             dat = brick(file, varname = varname)
             if (!is.null(levels)) dat = dat[[levels]] 

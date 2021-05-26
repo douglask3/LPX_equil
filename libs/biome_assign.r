@@ -21,7 +21,7 @@ variable_from_biome <- function(id, gdd_threshold = 350, veg_treshold = c(0.6, 0
         height = c(10, 20, 9999)
     else if (id <=8)
         height = c(0,5, 10)
-    else height = c(0, 20, 9999)
+    else height = c(0, NaN, 9999)
 
     names(height) = paste0("height-", c("Min", "Mid", "Max"))
 
@@ -31,7 +31,17 @@ variable_from_biome <- function(id, gdd_threshold = 350, veg_treshold = c(0.6, 0
         gdd = c(350, 1000, 9999)
 
     names(gdd) = paste0("gdd-", c("Min", "Mid", "Max"))
-    return(c(fpc, height, gdd))
+    
+    if (id == 1 || id == 3) 
+        eg = c(0.5, 0.75, 1.0)
+    else if (id == 2 || id == 4)
+        eg = c(0, 0.25, 0.5)
+    else
+        eg = c(0, NaN, 1)
+    
+    names(eg) = paste0("evergreen-", c("Min", "Mid", "Max"))
+
+    return(c(fpc, height, gdd, eg))
 }
 
 biome_assignment <- function(fpc, height, gdd = NULL,
