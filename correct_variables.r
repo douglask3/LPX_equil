@@ -10,29 +10,36 @@ graphics.off()
 site_file = 'data/data_model_comparison_DMM_with_master_corelist.csv'
 
 mod_dir = 'data/4_models_raw_output/'
-
+tas_dir =  'data/Figures_doug/Figure 2_6/'
 pattern = '_fon'
 
 mod_files = list.files(mod_dir, pattern = pattern, full.name = TRUE)
+tas_files = list.files(tas_dir, full.names = TRUE) 
+varnames = list(gdd = "gdd", height = c("height", "fpc_grid"), fpc = "fpc_grid")
 
-varnames = list(height = c("height", "fpc_grid"), fpc = "fpc_grid")
+blankFun <- function(i) i
+levelss = list(NaN, 1:7, 1:9)
+aggFUNs = list(blankFun, mean, sum)
 
-levelss = list(1:7, 1:9)
-aggFUNs = list(mean, sum)
+logN <- function(x, n= length(dats[[1]])) log(x+1/n)
+transs  = list(logN, logN, logit)
+itranss = list(exp, exp, logistic)
 
-transs  = list(log, logit)
-itranss = list(exp, logistic)
-
-limitss = list(C(0, 0.1, 0.2, 0.5, 1, 2, 4, 6, 8),
-              c(0, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9))
-colss = list(c('#fff7fb','#ece2f0','#d0d1e6','#a6bddb','#67a9cf',
+limitss = list(c(0, 100, 200, 300, 350, 400, 450),
+               c(0, 0.1, 0.2, 0.5, 1, 2, 4, 6, 8),
+               c(0, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9))
+colss = list(rev(c('#d73027','#f46d43','#fdae61','#fee090','#ffffbf',
+                   '#e0f3f8','#abd9e9','#74add1','#4575b4')),
+             c('#fff7fb','#ece2f0','#d0d1e6','#a6bddb','#67a9cf',
                '#3690c0','#02818a','#016c59','#014636'),
              c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679',
                '#41ab5d','#238443','#006837','#004529'))
 
-dlimitss1 = list(c(-1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2),
+dlimitss1 = list(seq(-0.5, 0.5, 0.5),
+                 c(-1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2),
                  seq(-4, 4))
-dlimitss2 = list(c(-6, -4, -2, -1, 1, 2, 4, 6),
+dlimitss2 = list(c(-140, -120, -100, -80, 60, -40, -20, 0, 20),
+                 c(-6, -4, -2, -1, 1, 2, 4, 6),
                  c(-0.5, -0.4, -0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 0.4, 0.5))
 dcolss = list(
 (c('#40004b','#762a83','#9970ab','#c2a5cf',
@@ -61,7 +68,8 @@ site_dat = cbind(site_dat, t(sapply(site_dat[,3], variable_from_biome)))
 apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dlimits2, dcols,
                       trans = function(x) x, itrans = trans) {
 ## Model data
-    openDat <- function(file, varname) {
+    openDat <- function(file, cfile, varname) {
+        
         if (length(varname) == 2) {
             dat1 = brick(file, varname = varname[1])  
             dat2 = brick(file, varname = varname[2])
@@ -70,6 +78,8 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
                 dat2 = dat2[[levels]]
             }
             dat = dat1*dat2/sum(dat2)                     
+        } else if (varname == 'gdd') {
+            dat = 500*(raster(cfile) > 2)
         } else {
             dat = brick(file, varname = varname)
             if (!is.null(levels)) dat = dat[[levels]] 
@@ -79,7 +89,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
         return(dat)
     }
     
-    dats = lapply(mod_files,  openDat, varname)
+    dats = mapply(openDat, mod_files, tas_file, MoreArgs = list(varname))
     dats = c(dats, mean(layer.apply(dats, function(i) i )))
       
 #########################
@@ -129,7 +139,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
     }
     zscores = lapply(dats, zscoring)
     czscore = lapply(cdat, zscoring)
-
+    
     png(paste0("figs/", name, "_correction.png"), width = 7.2, height = 10, 
         res = 300, units = 'in')
     par(mfrow = c(6, length(dats)), mar = rep(0, 4), oma = c(0, 0, 2, 2))
