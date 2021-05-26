@@ -15,20 +15,30 @@ pattern = '_fon'
 
 mod_files = list.files(mod_dir, pattern = pattern, full.name = TRUE)
 
-varnames = c("fpc_grid")
+varnames = list(height = c("height", "fpc_grid"), fpc = "fpc_grid")
 
-levelss = list(1:9)
-aggFUNs = list(sum)
+levelss = list(1:7, 1:9)
+aggFUNs = list(mean, sum)
 
-transs  = list(logit)
-itranss = list(logistic)
+transs  = list(log, logit)
+itranss = list(exp, logistic)
 
-limitss = list(c(0, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9))
-colss = list(c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679','#41ab5d','#238443','#006837','#004529'))
+limitss = list(C(0, 0.1, 0.2, 0.5, 1, 2, 4, 6, 8),
+              c(0, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9))
+colss = list(c('#fff7fb','#ece2f0','#d0d1e6','#a6bddb','#67a9cf',
+               '#3690c0','#02818a','#016c59','#014636'),
+             c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679',
+               '#41ab5d','#238443','#006837','#004529'))
 
-dlimitss1 = list(seq(-4, 4))
-dlimitss2 = list(c(-0.5, -0.4, -0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 0.4, 0.5))
-dcolss = list(rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e')))
+dlimitss1 = list(c(-1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2),
+                 seq(-4, 4))
+dlimitss2 = list(c(-6, -4, -2, -1, 1, 2, 4, 6),
+                 c(-0.5, -0.4, -0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 0.4, 0.5))
+dcolss = list(
+(c('#40004b','#762a83','#9970ab','#c2a5cf',
+                    '#e7d4e8','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837','#00441b')),
+              rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5',
+                    '#c7eae5','#80cdc1','#35978f','#01665e')))
 
 zlimits =  c(-4, -3, -2, -1, -0.1, 0.1, 1, 2, 3, 4)
 zcols = rev(c('#7f3b08','#b35806','#e08214','#fdb863','#fee0b6','#f7f7f7','#d8daeb','#b2abd2','#8073ac','#542788','#2d004b'))
@@ -48,20 +58,30 @@ site_dat = as.matrix(site_dat[c("LONGITUDE", "LATITUDE", "POLLEN_TO_LPX_BIOME_NU
 site_dat = site_dat[!apply(site_dat, 1, function(i) any(is.na(i))), ]
 site_dat = cbind(site_dat, t(sapply(site_dat[,3], variable_from_biome)))
 
-apply2Var <- function(varname, levels, aggFUN, limits, cols, dlimits1, dlimits2, dcols,
+apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dlimits2, dcols,
                       trans = function(x) x, itrans = trans) {
 ## Model data
-    openDat <- function(file) {
-        dat = brick(file, varname = varname)
-        if (!is.null(levels)) dat = dat[[levels]]   
+    openDat <- function(file, varname) {
+        if (length(varname) == 2) {
+            dat1 = brick(file, varname = varname[1])  
+            dat2 = brick(file, varname = varname[2])
+            if (!is.null(levels)) {
+                dat1 = dat1[[levels]] 
+                dat2 = dat2[[levels]]
+            }
+            dat = dat1*dat2/sum(dat2)                     
+        } else {
+            dat = brick(file, varname = varname)
+            if (!is.null(levels)) dat = dat[[levels]] 
+        }
         if (!is.null(aggFUN)) dat = aggFUN(dat)
         dat[dat > 9E9] = NaN
         return(dat)
     }
-
-    dats = lapply(mod_files,  openDat)
+    
+    dats = lapply(mod_files,  openDat, varname)
     dats = c(dats, mean(layer.apply(dats, function(i) i )))
-
+      
 #########################
 ## perform corrections ##
 #########################
@@ -77,27 +97,32 @@ apply2Var <- function(varname, levels, aggFUN, limits, cols, dlimits1, dlimits2,
 
         mod = apply(site_dat[,1:2], 1, getCell)
         comb = cbind(mod[3,], site_dat[,grepl(varname, colnames(site_dat))])
-
+        
         calDif <- function(x) {
+            x0 = x
             if (any(is.na(x))) return(NaN)
             x = trans(x)
+            
             if (x[1] < x[2]) out = (x[1] - x[2])
-            else if (x[1] > x[3])  out = (x[1] - x[3])
+            else if (x[1] > x[4])  out = (x[1] - x[4])
             else out = 0
             return(out)
         }
         dif = apply(comb, 1, calDif)
+        
         xy = t(mod)[,1:2]
         ra = rasterFromXYZ(cbind(xy, dif))
-        tps = Tps(xy, dif, lon.lat = TRUE)
-        p = raster(dat)
-        p = interpolate(p, tps)
+        tps = Tps(xy, dif, lon.lat = TRUE) 
+        
+        #p = raster(dat)
+        p = interpolate(dat, tps)
         p[is.na(dat)] = NaN
-
+        
         return(p)
     }
     cors = lapply(dats, calCorrection)
-    cdat = mapply(function(i, j) itrans(trans(dat) - p), dats, cors)
+    cdat = mapply(function(i, j) itrans(trans(i) - j), dats, cors)
+    
     zscoring <- function(dat) {
         dat = trans(dat)
         return(dat - mean(dat[], na.rm = TRUE))/sd(dat[], na.rm = TRUE)
@@ -105,7 +130,8 @@ apply2Var <- function(varname, levels, aggFUN, limits, cols, dlimits1, dlimits2,
     zscores = lapply(dats, zscoring)
     czscore = lapply(cdat, zscoring)
 
-    png("figs/fpc_correction.png", width = 7.2, height = 10, res = 300, units = 'in')
+    png(paste0("figs/", name, "_correction.png"), width = 7.2, height = 10, 
+        res = 300, units = 'in')
     par(mfrow = c(6, length(dats)), mar = rep(0, 4), oma = c(0, 0, 2, 2))
 #########################
 ## Plot variable       ##
@@ -151,7 +177,7 @@ apply2Var <- function(varname, levels, aggFUN, limits, cols, dlimits1, dlimits2,
 ##############################
 ## Connectivity score       ##
 ##############################
-zscores = mapply(apply2Var,  varnames, levelss, aggFUNs,
+zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
                  limitss, colss, dlimitss1, dlimitss2, dcolss,
                   transs, itranss)
 
@@ -186,7 +212,7 @@ findM <- function(i, j, conn, rin, test0 = FALSE)  {
        
         out =  whichMinD(apply(iijj, 1, newRange))
         if (is.null(out)) return(conn)      
-        for  (lr in 1:3) conn[[i]][i,j] = out[i]  
+        for  (lr in 1:3) conn[[lr]][i,j] = out[lr]  
         conn
 } 
 initaliseRW <- function(rin) {
@@ -223,11 +249,9 @@ initaliseRW <- function(rin) {
     for (i in 1:4) rout[[i]][] = conn[[i]]
     return(rout)   
 }
-conn1 = initaliseRW(zscore1)   
-conn2 = initaliseRW(zscore2)
+#conn1 = initaliseRW(zscore1)   
+#conn2 = initaliseRW(zscore2)
 
-
-browser()
 targetRW <- function(rin, zscore, ninter) {
     conn = layer.apply(rin, function(i) as.matrix(i))
     nr = nrow(rin); nc = ncol(rin)
@@ -244,12 +268,15 @@ targetRW <- function(rin, zscore, ninter) {
         }
         index = lapply(0:d, FUN)
         index = unique(do.call(rbind, index))
-        index = index[apply(index>0, 1, all) & index[,1] < nr & index[,2] < nc,]
-        dists = apply(index, 1, function(i) conn[[3]][i[1], i[2]]     )
-        if (all(is.na(dists))) next
-        c(i, j) := index[which.min(dists),]
-        connA = conn
-        for (step in 1:1000) {
+        if (length(dim(index)) == 1) {
+            i = index[1]; j = index[2]
+        }   else {
+            index = index[apply(index>0, 1, all) & index[,1] < nr & index[,2] < nc,]
+            dists = apply(index, 1, function(i) conn[[3]][i[1], i[2]]     )
+            if (all(is.na(dists))) next
+            c(i, j) := index[which.min(dists),]
+        }
+        for (step in 1:10000) {
             print(step)
             txy = sample(c(0, 1), 1)
             if (txy == 0) i = i + sample(c(-1, 1), 1)
@@ -266,8 +293,8 @@ targetRW <- function(rin, zscore, ninter) {
     for (i in 1:4) rout[[i]][] = conn[[i]]    
     browser()
 }
-conn1x = targetRW(conn1, zscore, 10)
-
+conn1x = targetRW(conn1, zscore, 1000)
+      browser()
 par(mfrow = c(2, 2), mar = rep(0, 4))
 plot_map_standrd(zscore1, zcols, zlimits, FALSE)
 add_raster_legend2(zcols, zlimits, dat = zscore,
