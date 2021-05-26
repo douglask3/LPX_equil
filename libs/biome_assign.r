@@ -41,7 +41,27 @@ variable_from_biome <- function(id, gdd_threshold = 350, veg_treshold = c(0.6, 0
     
     names(eg) = paste0("evergreen-", c("Min", "Mid", "Max"))
 
-    return(c(fpc, height, gdd, eg))
+    if (id <= 2 || id == 5) 
+        tr = c(0.5, 0.75, 1.0)
+    else if (id == 8 || id == 11 || id == 12)
+        tr = c(0, 0, 0)
+    else if (id == 9 || id == 10)
+        tr = c(0, 0.5, 1)
+    else 
+        tr = c(0, 0.25, 0.5)
+    
+    names(tr) = paste0("tropical-", c("Min", "Mid", "Max"))
+
+    if (id == 3 || id == 4 || id == 6 || id == 7)
+        tm = c(0.5, 0.75, 1.0)
+    else if (id == 9 || id == 10)
+        tm = c(0, 0.5, 1.0)
+    else
+        tm = c(0, 0.25, 0.5)
+    
+    names(tm) = paste0("temperate-", c("Min", "Mid", "Max"))
+
+    return(c(fpc, height, gdd, eg, tr, tm))
 }
 
 biome_assignment <- function(fpc, height, gdd = NULL,

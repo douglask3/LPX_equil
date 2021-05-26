@@ -16,23 +16,29 @@ pattern = '_fon'
 
 mod_files = list.files(mod_dir, pattern = pattern, full.name = TRUE)
 tas_files = list.files(tas_dir, full.names = TRUE) 
-varnames = list(evergreen = "evergreen",
+varnames = list(tropical = "tropical", temperate = "temperate", evergreen = "evergreen",
                 gdd = "gdd", height = c("height", "fpc_grid"), fpc = "fpc_grid")
 
 blankFun <- function(i) i
-levelss = list(1:7, NaN, 1:7, 1:9)
-aggFUNs = list(blankFun, blankFun, mean, function(...) sum(...))
+levelss = list(c(1:2, 9), c(3:5, 8), c(1, 3, 4, 6), NaN, 1:7, 1:9)
+aggFUNs = list(blankFun, blankFun, blankFun, blankFun, mean, function(...) sum(...))
 
 logN <- function(x, n= length(dats[[1]])) log(x+1/n)
-transs  = list(logit, logN, logN, logit)
-itranss = list(logistic, exp, exp, logistic)
+transs  = list(logit, logit, logit, logN, logN, logit)
+itranss = list(logistic, logistic, logistic, exp, exp, logistic)
 
 limitss = list(c(0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95),
+               c(0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95),
+               c(0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95),
                c(0, 100, 200, 300, 350, 400, 450),
                c(0, 0.1, 0.2, 0.5, 1, 2, 4, 6, 8),
                c(0, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9))
 colss = list(c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3',
                '#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e','#003c30'),
+             c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3',
+               '#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e','#003c30'),  
+             c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3',
+               '#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e','#003c30'),  
              rev(c('#d73027','#f46d43','#fdae61','#fee090','#ffffbf',
                    '#e0f3f8','#abd9e9','#74add1','#4575b4')),
              c('#fff7fb','#ece2f0','#d0d1e6','#a6bddb','#67a9cf',
@@ -41,14 +47,22 @@ colss = list(c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3',
                '#41ab5d','#238443','#006837','#004529'))
 
 dlimitss1 = list(seq(-4, 2),
+                 seq(-4, 2),
+                 seq(-4, 2),
                  seq(-0.5, 0.5, 0.5),
                  c(-1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2),
                  seq(-4, 4))
 dlimitss2 = list(c(-0.5, -0.2, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.2, 0.5),
+                 c(-0.5, -0.2, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.2, 0.5),
+                 c(-0.5, -0.2, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.2, 0.5),
                  c(-140, -120, -100, -80, 60, -40, -20, 0, 20),
                  c(-6, -4, -2, -1, 1, 2, 4, 6),
                  c(-0.5, -0.4, -0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 0.4, 0.5))
 dcolss = list(c('#8e0152','#c51b7d','#de77ae','#f1b6da','#fde0ef',
+                 '#f7f7f7','#e6f5d0','#b8e186','#7fbc41','#4d9221','#276419'),
+              c('#8e0152','#c51b7d','#de77ae','#f1b6da','#fde0ef',
+                 '#f7f7f7','#e6f5d0','#b8e186','#7fbc41','#4d9221','#276419'),
+              c('#8e0152','#c51b7d','#de77ae','#f1b6da','#fde0ef',
                  '#f7f7f7','#e6f5d0','#b8e186','#7fbc41','#4d9221','#276419'),
               rev(c('#7f3b08','#b35806','#e08214','#fdb863','#fee0b6',
                     '#f7f7f7','#d8daeb','#b2abd2','#8073ac','#542788','#2d004b')),
@@ -93,10 +107,11 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
                               
         } else if (varname == 'gdd') {
             dat = 500*(raster(cfile) > 2)
-        } else if (varname == "evergreen") {
-            dat = brick(file, varname = "fpc_grid") [[1:7]]  
+        } else if (varname == "evergreen" || varname == "tropical" || varname == "temperate") {
+            if (varname == "evergreen") pfts = 1:7 else pfts = 1:9
+            dat = brick(file, varname = "fpc_grid") [[pfts]]  
             datt = sum(dat) 
-            dat = sum(dat[[c(1, 3, 4, 6)]])/datt
+            dat = sum(dat[[levels]])/datt
             dat[datt>9E9] = NaN
             dat[datt==0] = 0
             
@@ -221,8 +236,9 @@ allZsm = allZs[!apply(allZs, 1, function(i) any(is.na(i))),]
 pca = prcomp(allZsm)
 ws =  pca$sdev^2/sum(pca$sdev^2)
 allZs[mask,] = predict(pca)
+
 for (i in 1:length(zscore)) zscore[[i]][] = allZs[,i]
-     
+
 start = c(-70.25, 8.25)
 
 j0 = colFromX(zscore[[1]], start[1])
@@ -285,7 +301,7 @@ initaliseRW <- function(rin, w, temp_name) {
     conn = list(conn0, conn0, conn) 
     conn[[2]][,] = 0.0 
     mask = any(layer.apply(rin, is.na))
-    
+   
     nr = nrow(rin[[1]]); nc = ncol(rin[[1]])
     maxDist =  max(i0, j0, nr-i0, nc-j0)
     
@@ -293,6 +309,7 @@ initaliseRW <- function(rin, w, temp_name) {
     stpp = 10
     temp_stepMake <- function(nxt) paste0(temp_file, '-', nxt, '.Rd')
     temp_step = temp_stepMake(nxtp)
+     
     for (d in 1:maxDist) {
         if (d > nxtp) {
             cat("save point to:", temp_step, "\n")
@@ -310,7 +327,7 @@ initaliseRW <- function(rin, w, temp_name) {
         indexicate <- function(k) 
             rbind(c(i0-d, j0-k), c(i0+d, j0-k), c(i0-d, j0+k), c(i0+d, j0+k),
                   c(i0-k, j0-d), c(i0+k, j0-d), c(i0-k, j0+d), c(i0+k, j0+d))
-                                                                           r
+                                                                           
         index = lapply(0:d,  indexicate)
         index = unique(do.call(rbind, index))
         index = index[apply(index>0, 1, all) & index[,1] < nr & index[,2] < nc,]
@@ -376,7 +393,7 @@ findMaps <- function(is1, is2, js1, js2, conn, rin, w) {
     return(conn)
  }
 shinnyRA <- function(rin, zscore, w) {
-    print("yay")
+
     if (is.raster(rin)) browser()
     nr = nrow(conn[[1]]); nc = ncol(conn[[1]])
     cis = list(2:nr,1:(nr-1))
