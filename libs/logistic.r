@@ -1,1 +1,1 @@
-logistic <- function(x) 1/(1+exp(-x))
+logistic <- function(x) 1/(1+exp(x*(-1)))

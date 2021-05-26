@@ -1,6 +1,7 @@
 #source("cfg.r")
 library(raster)
 library(rasterExtras)
+library(fields)
 source("libs/biome_assign.r")
 graphics.off()
 ##################
@@ -20,7 +21,7 @@ varnames = list(evergreen = "evergreen",
 
 blankFun <- function(i) i
 levelss = list(1:7, NaN, 1:7, 1:9)
-aggFUNs = list(blankFun, blankFun, mean, sum)
+aggFUNs = list(blankFun, blankFun, mean, function(...) sum(...))
 
 logN <- function(x, n= length(dats[[1]])) log(x+1/n)
 transs  = list(logit, logN, logN, logit)
@@ -85,7 +86,11 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
                 dat1 = dat1[[levels]] 
                 dat2 = dat2[[levels]]
             }
-            dat = dat1*dat2/sum(dat2)                     
+           
+            datt = sum(dat2)
+            dat = dat1*dat2/datt
+            dat[datt == 0] = 0  
+                              
         } else if (varname == 'gdd') {
             dat = 500*(raster(cfile) > 2)
         } else if (varname == "evergreen") {
@@ -94,6 +99,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
             dat = sum(dat[[c(1, 3, 4, 6)]])/datt
             dat[datt>9E9] = NaN
             dat[datt==0] = 0
+            
         } else {
             dat = brick(file, varname = varname)
             if (!is.null(levels)) dat = dat[[levels]] 
@@ -125,7 +131,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
         calDif <- function(x) {
             x0 = x
             if (any(is.na(x))) return(NaN)
-            x = trans(x)
+            x = trans(x, length(dats[[1]]))
             
             if (x[1] < x[2]) out = (x[1] - x[2])
             else if (x[1] > x[4])  out = (x[1] - x[4])
@@ -145,10 +151,10 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
         return(p)
     }
     cors = lapply(dats, calCorrection)
-    cdat = mapply(function(i, j) itrans(trans(i) - j), dats, cors)
+    cdat = mapply(function(i, j) itrans(trans(i, n = length(dats[[1]])) - j), dats, cors)
     
     zscoring <- function(dat) {
-        dat = trans(dat)
+        dat = trans(dat, n = length(dats[[1]]))
         return(dat - mean(dat[], na.rm = TRUE))/sd(dat[], na.rm = TRUE)
     }
     zscores = lapply(dats, zscoring)
@@ -201,80 +207,191 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
 ##############################
 ## Connectivity score       ##
 ##############################
-zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
-                 limitss, colss, dlimitss1, dlimitss2, dcolss,
-                  transs, itranss)
+#zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
+#                 limitss, colss, dlimitss1, dlimitss2, dcolss,
+#                  transs, itranss)
+#browser()
+modID = 5
+correctID = 2
 
-zscore1 = zscores[[1]][[5]]
-zscore2 = zscores[[2]][[5]] 
-zscore1 = crop(zscore1, extent(c(-83, -33, -30, 15)))      
-zscore2 = crop(zscore2, extent(c(-83, -33, -30, 15)))      
+zscore = zscore0 =  lapply(zscores[correctID,], function(i) i[[modID]])
+allZs = do.call(cbind, lapply(zscore, function(i) i[]))
+mask = !apply(allZs, 1, function(i) any(is.na(i)))
+allZsm = allZs[!apply(allZs, 1, function(i) any(is.na(i))),]
+pca = prcomp(allZsm)
+ws =  pca$sdev^2/sum(pca$sdev^2)
+allZs[mask,] = predict(pca)
+for (i in 1:length(zscore)) zscore[[i]][] = allZs[,i]
+     
 start = c(-70.25, 8.25)
 
-j0 = colFromX(zscore, start[1])
-i0 = rowFromY(zscore, start[2])
+j0 = colFromX(zscore[[1]], start[1])
+i0 = rowFromY(zscore[[1]], start[2])
 
 iijj = lapply(c(-1, 0, 1), function(jj) sapply(c(-1, 0, 1), function(ii,jj) c(ii,jj), jj)) 
 iijj = do.call(cbind, iijj)
 
-findM <- function(i, j, conn, rin, test0 = FALSE)  {
-        newRange <- function(ij) {
-            c(min(conn[[1]][ij[1],ij[2]], rin[i, j]),
-              max(conn[[2]][ij[1],ij[2]], rin[i, j]))
+findM <- function(i, j, mask, conn, rin, w, test0 = FALSE)  {
+        
+        newRanges <- function(ij) {
+            newRange <- function(coni, ri) {
+                c(min(coni[[1]][ij[1],ij[2]], ri[i, j]),
+                max(coni[[2]][ij[1],ij[2]], ri[i, j])) 
+            }
+            list(mapply(newRange, conn[[3]], rin))
         }
         whichMinD  <- function(v) {
-            if (all(is.na(v))) return(c(NaN, NaN, NaN))
-            d = v[2,] - v[1,]
-            if (test0 && !is.na(conn[[3]][i,j]) && conn[[3]][i,j]<=min(d)) return(NULL)    
-            index = which.min(d)
-            c(v[,index], d[index])
+            v = lapply(v, function(i) i[[1]])
+            test  =sapply(v, function(i) !any(is.na(i)))            
+            v = v[test]              
+
+            if (length(v) == 0) {
+                blankOut = rep(NaN, length(conn[[3]]) )
+                return(list(NaN, rbind(blankOut, blankOut)))
+            }
+            
+            mean.wtd <- function(vi) sum(w*(vi[2,]-vi[1,]))
+            d = sapply(v, mean.wtd) 
+            
+            if (test0) browser()
+            #if (test0 && !is.na(conn[[3]][i,j]) && conn[[3]][i,j]<=min(d)) return(NULL)    
+            index = which.min(d)            
+            list(d[index], v[[index]])
         }
         iijj = iijj + c(i,j)
-        test = iijj[1,] <nrow(conn[[3]]) & iijj[2,] <ncol(conn[[3]])
-        iijj = iijj[,test]
-        iijj = t(iijj[,!is.na(apply(iijj, 2, function(i) conn[[1]][i[1], i[2]]))])
-       
-        out =  whichMinD(apply(iijj, 1, newRange))
-        if (is.null(out)) return(conn)      
-        for  (lr in 1:3) conn[[lr]][i,j] = out[lr]  
+        test = iijj[1,] <nrow(mask) & iijj[2,] <ncol(mask)
+        iijj = iijj[,test]        
+        iijj = t(iijj[,!(apply(iijj, 2, function(i) mask[i[1], i[2]]))])
+        
+        out =  whichMinD(apply(iijj, 1, newRanges))
+        if (is.null(out)) return(conn) 
+        conn[[1]][i,j] = out[[1]]     
+        for  (lr in 1:length(conn[[3]]))
+            for (mm in 1:2) conn[[3]][[lr]][[mm]][i,j] = out[[2]][mm,lr]  
         conn
 } 
-initaliseRW <- function(rin) {
-    conn = as.matrix(rin)
-    conn[,] = NaN
-    conn = list(conn, conn, conn, conn)
-    conn[[1]][i0,j0] =  rin[i0,j0]
-    conn[[2]][i0,j0] =  rin[i0,j0] 
-    conn[[4]][,] = 0.0 
-
-    nr = nrow(rin); nc = ncol(rin)
+initaliseRW <- function(rin, w, temp_name) {
+    print(temp_name)
+    temp_file = paste0("temp/initaliseRW-", temp_name)
+    temp_comp = paste0(temp_file, "complete.Rd")
+    if (file.exists(temp_comp)) load(temp_comp)  else {
+    
+    conn0 = as.matrix(rin[[1]])
+    conn0[,] = NaN
+    connp = list(conn0, conn0)
+    
+    conn = rep(list(connp), length(rin))
+    for (i in 1:length(rin)) for (j in 1:2) conn[[i]][[j]][i0,j0] =  rin[[i]][i0,j0]   
+    conn = list(conn0, conn0, conn) 
+    conn[[2]][,] = 0.0 
+    mask = any(layer.apply(rin, is.na))
+    
+    nr = nrow(rin[[1]]); nc = ncol(rin[[1]])
     maxDist =  max(i0, j0, nr-i0, nc-j0)
     
+    nxtp = 10
+    stpp = 10
+    temp_stepMake <- function(nxt) paste0(temp_file, '-', nxt, '.Rd')
+    temp_step = temp_stepMake(nxtp)
     for (d in 1:maxDist) {
+        if (d > nxtp) {
+            cat("save point to:", temp_step, "\n")
+            if (!file.exists(temp_step)) save(conn, file = temp_step)   
+            nxtp = nxtp + stpp  
+            temp_step = temp_stepMake(nxtp)         
+        }
+        
+        if (file.exists(temp_step)) {
+            load(temp_step)
+            next
+        } 
         print(d/maxDist)
+        
         indexicate <- function(k) 
             rbind(c(i0-d, j0-k), c(i0+d, j0-k), c(i0-d, j0+k), c(i0+d, j0+k),
                   c(i0-k, j0-d), c(i0+k, j0-d), c(i0-k, j0+d), c(i0+k, j0+d))
-    
+                                                                           r
         index = lapply(0:d,  indexicate)
         index = unique(do.call(rbind, index))
         index = index[apply(index>0, 1, all) & index[,1] < nr & index[,2] < nc,]
     
         order = sample(1:nrow(index), nrow(index), replace = FALSE)
         for (s in order) {
-            if (is.na(rin[index[s, 1], index[s, 2]])) next
-            conn = findM(index[s, 1], index[s, 2], conn, rin)#, conn[[1]], max)   
-            #conn[[2]] = findM(index[s, 1], index[s, 2])#, conn[[2]], min)  
-            conn[[4]][index[s, 1], index[s, 2]] = conn[[4]][index[s, 1], index[s, 2]]+1    
-        }
-        #if (d == 22) browser()
+            ss = s             
+            if (mask[index[s, 1], index[s, 2]]) next
+            conn = findM(index[s, 1], index[s, 2], mask, conn, rin, w)#, conn[[1]], max)  
+            conn[[2]][index[s, 1], index[s, 2]] = conn[[2]][index[s, 1], index[s, 2]]+1    
+        }        
     }
-    rout = addLayer(rin, rin, rin, rin)
-    for (i in 1:4) rout[[i]][] = conn[[i]]
-    return(rout)   
+    save(conn, file = temp_comp)
+    }    
+    return(conn) 
 }
+conn = initaliseRW(zscore, ws,
+                   paste("zscore_pca_from_", length(zscore), modID, correctID, sep = '-'))
+
+translanteRW2raster <- function(conn, rin) {
+    rout0 = rin[[1]]
+    routp = addLayer(rout0, rout0)
+    routp = rep(c(routp), length(conn[[3]]))
+    names(routp) = names(rin)
+    for (v in 1:length(routp)) for (mm in 1:2) routp[[v]][[mm]][] = conn[[3]][[v]][[mm]]
+    rout = list(rout0, rout0, routp)
+    for (v in 1:2) rout[[v]][] = conn[[v]]  
+    return(rout)
+}
+conn_scores = translanteRW2raster(conn, zscore)
+
 #conn1 = initaliseRW(zscore1)   
 #conn2 = initaliseRW(zscore2)
+gt <- function(a, b) a > b    
+lt <- function(a, b) a < b  
+findMaps <- function(is1, is2, js1, js2, conn, rin, w) {
+    
+    compCompare <- function(cn, ri) {
+        ri =  as.matrix(ri)[is1, js1]       
+        compMM <- function(ci, FUN1) {
+            co = ci
+            test = which(FUN1(ci[is2, js2], ci[is1, js1]))
+            co[is1, js1][test] = ci[is2, js2][test]
+            test = which(FUN1(co[is1, js1],ri))
+            co[is1, js1][test] = ri[test]
+            return(co)
+        }
+        cn = list(compMM(cn[[1]], gt), compMM(cn[[2]], lt)) 
+    }
+    connU = mapply(compCompare, conn[[3]], rin, SIMPLIFY = FALSE)
+    d = mapply(function(ci, w) w*abs(ci[[2]]-ci[[1]]), connU, w, SIMPLIFY = FALSE)
+    
+    if (length(d) > 1)         
+        for (di in d[-1]) d[[1]] = d[[1]] + di
+    
+    d = d[[1]]
+    test = which(d < conn[[1]])
+    
+    conn[[1]][test] = d[test]
+    conn[[2]][test] = conn[[2]][test] +1
+    for (lr in 1:length(conn[[3]])) for (mm in 1:2)
+        conn[[3]][[lr]][[mm]][test] = connU[[lr]][[mm]][test]
+    return(conn)
+ }
+shinnyRA <- function(rin, zscore, w) {
+    print("yay")
+    if (is.raster(rin)) browser()
+    nr = nrow(conn[[1]]); nc = ncol(conn[[1]])
+    cis = list(2:nr,1:(nr-1))
+    cjs = list(2:nc, 1:(nc-1))
+    for (shim in 1:1000) {
+        print(shim)
+        it1 = sample(1:2, 1); jt1 = sample(1:2, 1) 
+        it2 = sample(1:2, 1); jt2 = sample(1:2, 1)
+        
+        conn = findMaps(cis[[it1]], cis[[it2]], cjs[[jt1]], cjs[[jt2]], conn, zscore, w) 
+    }
+    return(conn)
+}
+connS = shinnyRA(conn, zscore, ws)
+conn_scores2 = translanteRW2raster(connS, zscore) 
 
 targetRW <- function(rin, zscore, ninter) {
     conn = layer.apply(rin, function(i) as.matrix(i))
@@ -307,7 +424,7 @@ targetRW <- function(rin, zscore, ninter) {
                else j = j + sample(c(-1, 1), 1)
             
             if (i > nr | j > nc | is.na(zscore[i,j])) break  
-            conn = findM(i, j, conn, zscore, TRUE)
+            conn = findM(i, j, mask, conn, zscore, TRUE)
             
             conn[[4]][i,j] = conn[[4]][i,j]+1
         }    
