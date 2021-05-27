@@ -230,9 +230,9 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
 ##############################
 ## Connectivity score       ##
 ##############################
-zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
-                 limitss, colss, dlimitss1, dlimitss2, dcolss,
-                  transs, itranss, maxLab)
+#zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
+#                 limitss, colss, dlimitss1, dlimitss2, dcolss,
+#                  transs, itranss, maxLab)
 
 plot_biomes <- function(r, name, tpoints = TRUE) {  
     
@@ -246,7 +246,9 @@ plot_biomes <- function(r, name, tpoints = TRUE) {
     }
     return(unique(r))
 }
-
+modnames = c(sapply(sapply(mod_files, function(file) tail(strsplit(file, '/')[[1]], 1)),
+                      function(nm) strsplit(nm, "_fon.nc")[[1]][1]), "Ensemble") 
+if (F) {
 png("figs/bias_corrected_biome.png", height = 18, width = 7.0,  units = 'in', res = pres)
 par(mfcol = c(5, 2), mar = rep(0, 4), oma = rep(2, 4))
 plotBiomes <- function(modid, corid) {
@@ -254,8 +256,7 @@ plotBiomes <- function(modid, corid) {
     biome = biome_assign_precalV(dat[["fpc"]], dat[["evergreen"]], dat[["tropical"]],
                          dat[["temperate"]], dat[["gdd"]], dat[["height"]])
     
-    modnames = c(sapply(sapply(mod_files, function(file) tail(strsplit(file, '/')[[1]], 1)),
-                      function(nm) strsplit(nm, "_fon.nc")[[1]][1]), "Ensemble")
+    
     if (modid == 1) modName = c('uncorrected', 'corrected')[corid] else modName = ''
     if (corid==1) tpoints = TRUE else tpoints = FALSE
     plot_biomes(biome+1, modName, tpoints)
@@ -268,7 +269,7 @@ plotBiomes <- function(modid, corid) {
 lapply(1:2, function(cid) lapply(1:length(zscores[[1,1]]), plotBiomes, cid))
 legend('left', col = biome_cols, legend = names(biome_cols), pch = 15, ncol = 2, pt.cex = 3)
 dev.off()
-  browser() 
+}
 start = c(-70.25+2, 8.25)
 
 j0 = colFromX(zscore[[1]], start[1])
@@ -379,7 +380,7 @@ translanteRW2raster <- function(conn, rin) {
     rout0 = rin[[1]]
     routp = addLayer(rout0, rout0)
     routp = rep(c(routp), length(conn[[3]]))
-    names(routp) = names(rin)
+    #names(routp) = names(rin)
     for (v in 1:length(routp)) for (mm in 1:2) routp[[v]][[mm]][] = conn[[3]][[v]][[mm]]
     rout = list(rout0, rout0, routp)
     for (v in 1:2) rout[[v]][] = conn[[v]]  
@@ -425,7 +426,7 @@ shinnyRA <- function(rin, zscore, w) {
     nr = nrow(conn[[1]]); nc = ncol(conn[[1]])
     cis = list(2:nr,1:(nr-1))
     cjs = list(2:nc, 1:(nc-1))
-    for (shim in 1:1000) {
+    for (shim in 1:50) {
         print(shim)
         it1 = sample(1:2, 1); jt1 = sample(1:2, 1) 
         it2 = sample(1:2, 1); jt2 = sample(1:2, 1)
@@ -436,8 +437,6 @@ shinnyRA <- function(rin, zscore, w) {
 }
 
 
-modID = 5
-correctID = 2
 ruinModCor <- function(modID = 5,   correctID = 2) {
     print("new RW simulator!")
     print(modID)
@@ -456,12 +455,39 @@ ruinModCor <- function(modID = 5,   correctID = 2) {
     conn = initaliseRW(zscore, ws, i0, j0,
                        paste("zscore_pca_from_", length(zscore), modID, correctID, sep = '-'))
      
-    #connS = shinnyRA(conn, zscore, ws)
+    connS = shinnyRA(conn, zscore, ws)
     #conn_scores = translanteRW2raster(conn, zscore) 
-    #conn_scores2 = translanteRW2raster(connS, zscore) 
+    translanteRW2raster(connS, zscore)[[1]] 
 }
-lapply(2:1, function(cID) lapply(5:1, ruinModCor, cID))
-broser()
+#connS = lapply(1:2, function(cID) lapply(1:5, ruinModCor, cID))
+conn_cols = c('#ffe5ff','#ffbcf7','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#993404','#662506')
+plotConn <- function(modid, conid, cols = conn_cols, limits = 0:10) {
+    if (conid == 3) con = dif[[modid]] else con = connS[[conid]][[modid]]
+    plot_map_standrd(con, cols, limits, FALSE)  
+    grid()
+    if (conid == 1) {
+        mtext(line = -2, adj = 0.8, side = 2, modnames[modid])
+        axis(2)
+    }
+    if (conid == 3) axis(4)
+    if (modid == 1) {
+        mtext(line = -2, adj = 0.8, side = 3,
+              c('uncorrected', 'corrected', 'difference')[conid])
+        axis(3)
+    }
+    if (modid == 5) axis(1)
+}
+png("figs/connectivity_score.png", res = pres, units = 'in', height = 12, width = 7)
+par(mfcol = c(5, 3), mar = rep(0, 4), oma = rep(2, 4))
+
+lapply(1:2, function(cons) lapply(1:5,  plotConn, cons))
+
+dif =  mapply('-', connS[[2]], connS[[1]])
+pconn_cols = rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e'))
+lapply(1:5, plotConn, 3, pconn_cols, c(-3, -2, -1, -0.5, -0.2, -0.1, 0.1, 0.2, 0.5, 1, 2, 3))
+dev.off()
+browser() 
+
 targetRW <- function(rin, zscore, ninter) {
     conn = layer.apply(rin, function(i) as.matrix(i))
     nr = nrow(rin); nc = ncol(rin)
