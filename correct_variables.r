@@ -226,20 +226,9 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
 #                 limitss, colss, dlimitss1, dlimitss2, dcolss,
 #                  transs, itranss)
 #browser()
-modID = 5
-correctID = 2
 
-zscore = zscore0 =  lapply(zscores[correctID,], function(i) i[[modID]])
-allZs = do.call(cbind, lapply(zscore, function(i) i[]))
-mask = !apply(allZs, 1, function(i) any(is.na(i)))
-allZsm = allZs[!apply(allZs, 1, function(i) any(is.na(i))),]
-pca = prcomp(allZsm)
-ws =  pca$sdev^2/sum(pca$sdev^2)
-allZs[mask,] = predict(pca)
 
-for (i in 1:length(zscore)) zscore[[i]][] = allZs[,i]
-
-start = c(-70.25, 8.25)
+start = c(-70.25+2, 8.25)
 
 j0 = colFromX(zscore[[1]], start[1])
 i0 = rowFromY(zscore[[1]], start[2])
@@ -286,9 +275,9 @@ findM <- function(i, j, mask, conn, rin, w, test0 = FALSE)  {
             for (mm in 1:2) conn[[3]][[lr]][[mm]][i,j] = out[[2]][mm,lr]  
         conn
 } 
-initaliseRW <- function(rin, w, temp_name) {
+initaliseRW <- function(rin, w, i0, j0, temp_name) {
     print(temp_name)
-    temp_file = paste0("temp/initaliseRW-", temp_name)
+    temp_file = paste0("temp/initaliseRW-", i0, '-', j0, '-', temp_name)
     temp_comp = paste0(temp_file, "complete.Rd")
     if (file.exists(temp_comp)) load(temp_comp)  else {
     
@@ -344,8 +333,6 @@ initaliseRW <- function(rin, w, temp_name) {
     }    
     return(conn) 
 }
-conn = initaliseRW(zscore, ws,
-                   paste("zscore_pca_from_", length(zscore), modID, correctID, sep = '-'))
 
 translanteRW2raster <- function(conn, rin) {
     rout0 = rin[[1]]
@@ -357,10 +344,9 @@ translanteRW2raster <- function(conn, rin) {
     for (v in 1:2) rout[[v]][] = conn[[v]]  
     return(rout)
 }
-conn_scores = translanteRW2raster(conn, zscore)
+#
 
-#conn1 = initaliseRW(zscore1)   
-#conn2 = initaliseRW(zscore2)
+
 gt <- function(a, b) a > b    
 lt <- function(a, b) a < b  
 findMaps <- function(is1, is2, js1, js2, conn, rin, w) {
@@ -407,9 +393,34 @@ shinnyRA <- function(rin, zscore, w) {
     }
     return(conn)
 }
-connS = shinnyRA(conn, zscore, ws)
-conn_scores2 = translanteRW2raster(connS, zscore) 
 
+
+modID = 5
+correctID = 2
+ruinModCor <- function(modID = 5,   correctID = 2) {
+    print("new RW simulator!")
+    print(modID)
+    print(correctID)
+    zscore = zscore0 =  lapply(zscores[correctID,], function(i) i[[modID]])
+    allZs = do.call(cbind, lapply(zscore, function(i) i[]))
+    mask = !apply(allZs, 1, function(i) any(is.na(i)))
+    allZsm = allZs[!apply(allZs, 1, function(i) any(is.na(i))),]
+    pca = prcomp(allZsm)
+    
+    ws =  pca$sdev^2/sum(pca$sdev^2)
+    allZs[mask,] = predict(pca)
+    
+    for (i in 1:length(zscore)) zscore[[i]][] = allZs[,i]   
+    
+    conn = initaliseRW(zscore, ws, i0, j0,
+                       paste("zscore_pca_from_", length(zscore), modID, correctID, sep = '-'))
+     
+    #connS = shinnyRA(conn, zscore, ws)
+    #conn_scores = translanteRW2raster(conn, zscore) 
+    #conn_scores2 = translanteRW2raster(connS, zscore) 
+}
+lapply(2:1, function(cID) lapply(5:1, ruinModCor, cID))
+broser()
 targetRW <- function(rin, zscore, ninter) {
     conn = layer.apply(rin, function(i) as.matrix(i))
     nr = nrow(rin); nc = ncol(rin)
@@ -451,8 +462,8 @@ targetRW <- function(rin, zscore, ninter) {
     for (i in 1:4) rout[[i]][] = conn[[i]]    
     browser()
 }
-conn1x = targetRW(conn1, zscore, 1000)
-      browser()
+#conn1x = targetRW(conn1, zscore, 1000)
+browser()
 par(mfrow = c(2, 2), mar = rep(0, 4))
 plot_map_standrd(zscore1, zcols, zlimits, FALSE)
 add_raster_legend2(zcols, zlimits, dat = zscore,
