@@ -13,6 +13,8 @@ site_file = 'data/data_model_comparison_DMM_with_master_corelist.csv'
 mod_dir = 'data/4_models_raw_output/'
 tas_dir =  'data/Figures_doug/Figure 2_6/'
 pattern = '_fon'
+pres = 100
+
 
 mod_files = list.files(mod_dir, pattern = pattern, full.name = TRUE)
 tas_files = list.files(tas_dir, full.names = TRUE) 
@@ -20,19 +22,23 @@ varnames = list(tropical = "tropical", temperate = "temperate", evergreen = "eve
                 gdd = "gdd", height = c("height", "fpc_grid"), fpc = "fpc_grid")
 
 blankFun <- function(i) i
-levelss = list(c(1:2, 9), c(3:5, 8), c(1, 3, 4, 6), NaN, 1:7, 1:9)
-aggFUNs = list(blankFun, blankFun, blankFun, blankFun, mean, function(...) sum(...))
+sumr <- function(...) sum(...)
+levelss = list(c(1:2, 9), c(3:5, 8), c(1, 3, 4, 6), NaN, 1:9, 1:9)
+aggFUNs = list(blankFun, blankFun, blankFun, blankFun, sumr, sumr)
 
 logN <- function(x, n= length(dats[[1]])) log(x+1/n)
 transs  = list(logit, logit, logit, logN, logN, logit)
 itranss = list(logistic, logistic, logistic, exp, exp, logistic)
 
-limitss = list(c(0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95),
-               c(0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95),
-               c(0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95),
+limitss = list(c(0, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 0.99),
+               c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9),
+               c(0, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 0.99),
                c(0, 100, 200, 300, 350, 400, 450),
                c(0, 0.1, 0.2, 0.5, 1, 2, 4, 6, 8),
                c(0, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9))
+
+maxLab = list(1, 1, 1, NULL, NULL, NULL)
+
 colss = list(c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3',
                '#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e','#003c30'),
              c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3',
@@ -46,15 +52,15 @@ colss = list(c('#543005','#8c510a','#bf812d','#dfc27d','#f6e8c3',
              c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e','#78c679',
                '#41ab5d','#238443','#006837','#004529'))
 
-dlimitss1 = list(seq(-4, 2),
-                 seq(-4, 2),
-                 seq(-4, 2),
+dlimitss1 = list(c(-6, -4, -2, -1, 1, 2, 4, 6),
+                 seq(-4, 4),
+                 c(-6, -4, -2, -1, 1, 2, 4, 6),
                  seq(-0.5, 0.5, 0.5),
                  c(-1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2),
                  seq(-4, 4))
-dlimitss2 = list(c(-0.5, -0.2, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.2, 0.5),
-                 c(-0.5, -0.2, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.2, 0.5),
-                 c(-0.5, -0.2, -0.1, -0.05, -0.01, 0.01, 0.05, 0.1, 0.2, 0.5),
+dlimitss2 = list(c(-0.8, -0.6, -0.4, -0.2, -0.1 , 0.1, 0.2, 0.4, 0.6, 0.8),
+                 c(-0.8, -0.6, -0.4, -0.2, -0.1 , 0.1, 0.2, 0.4, 0.6, 0.8),
+                 c(-0.6, -0.4, -0.2, -0.1, -0.05, 0.05, 0.1, 0.2, 0.4, 0.6),
                  c(-140, -120, -100, -80, 60, -40, -20, 0, 20),
                  c(-6, -4, -2, -1, 1, 2, 4, 6),
                  c(-0.5, -0.4, -0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 0.4, 0.5))
@@ -89,7 +95,7 @@ site_dat = site_dat[!apply(site_dat, 1, function(i) any(is.na(i))), ]
 site_dat = cbind(site_dat, t(sapply(site_dat[,3], variable_from_biome)))
 
 apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dlimits2, dcols,
-                      trans = function(x) x, itrans = trans) {
+                      trans = function(x) x, itrans = trans, maxLab) {
 ## Model data
     openDat <- function(file, cfile, varname) {
         
@@ -100,9 +106,9 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
                 dat1 = dat1[[levels]] 
                 dat2 = dat2[[levels]]
             }
-           
+            #browser()
             datt = sum(dat2)
-            dat = dat1*dat2/datt
+            dat = dat1*dat2#/datt
             dat[datt == 0] = 0  
                               
         } else if (varname == 'gdd') {
@@ -174,15 +180,16 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
     }
     zscores = lapply(dats, zscoring)
     czscore = lapply(cdat, zscoring)
-    
+
+    if (T) {
     png(paste0("figs/", name, "_correction.png"), width = 7.2, height = 10, 
-        res = 300, units = 'in')
+        res = pres, units = 'in')
     par(mfrow = c(6, length(dats)), mar = rep(0, 4), oma = c(0, 0, 2, 2))
 #########################
 ## Plot variable       ##
 #########################
-    plotMap <- function(..., text2 = '', text3 = '') {
-        plot_SA_Map_standard(..., add_legend = FALSE)
+    plotMap <- function(x, ..., text2 = '', text3 = '') {
+        plot_map_standrd(x, ..., readyCut = FALSE, add_legend = FALSE)
         #if (sites) points(site_dat[,1], site_dat[, 2], pch = 19)
         mtext(text3, side = 3)
     }
@@ -194,7 +201,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
     modnames = c(modnames, 'ensemble')
     mapply(plotMap, dats, text3 = modnames, MoreArgs = list(limits = limits, cols = cols))
     mtext(side = 4, 'Model output')
-    plotLeg(cols = cols, limits = limits, maxLab = 1)
+    plotLeg(cols = cols, limits = limits, maxLab = maxLab)
     
     lapply(zscores, plotMap, limits = zlimits, cols = zcols)
     mtext(side = 4, 'z score')
@@ -216,18 +223,52 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
     mtext(side = 4, 'corrected z score')
     plotLeg(cols = zcols, limits = zlimits)
     dev.off()
-    return(list(zscores, czscore))
+    }
+    return(list(zscores, czscore, dats, cdat))
 }
 
 ##############################
 ## Connectivity score       ##
 ##############################
-#zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
-#                 limitss, colss, dlimitss1, dlimitss2, dcolss,
-#                  transs, itranss)
-#browser()
+zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
+                 limitss, colss, dlimitss1, dlimitss2, dcolss,
+                  transs, itranss, maxLab)
 
+plot_biomes <- function(r, name, tpoints = TRUE) {  
+    
+    plot_map_standrd(r, biome_cols, seq(1.5, length.out = length(biome_cols) - 1))
+    mtext.units(name, adj = 0.9, line = -2)   
+    grid()
+    if (tpoints) {
+        points(site_dat[,1], site_dat[,2], pch = 19, cex = 1.3)
+        points(site_dat[,1], site_dat[,2], col = 'white', pch = 19)
+        points(site_dat[,1], site_dat[,2], col = biome_cols[site_dat[,3]+1], pch = 19, cex = 0.7)
+    }
+    return(unique(r))
+}
 
+png("figs/bias_corrected_biome.png", height = 18, width = 7.0,  units = 'in', res = pres)
+par(mfcol = c(5, 2), mar = rep(0, 4), oma = rep(2, 4))
+plotBiomes <- function(modid, corid) {
+    dat = lapply(zscores[2 + corid,], function(i) i[[modid]])
+    biome = biome_assign_precalV(dat[["fpc"]], dat[["evergreen"]], dat[["tropical"]],
+                         dat[["temperate"]], dat[["gdd"]], dat[["height"]])
+    
+    modnames = c(sapply(sapply(mod_files, function(file) tail(strsplit(file, '/')[[1]], 1)),
+                      function(nm) strsplit(nm, "_fon.nc")[[1]][1]), "Ensemble")
+    if (modid == 1) modName = c('uncorrected', 'corrected')[corid] else modName = ''
+    if (corid==1) tpoints = TRUE else tpoints = FALSE
+    plot_biomes(biome+1, modName, tpoints)
+    if (corid == 1) mtext(side = 2, modnames[modid], line = -2, ad = 0.8)    
+    if (corid==1) axis(2) else axis(4)
+    if (modid==1) axis(3)
+    if (modid==length(zscores[[1,1]])) axis(1)
+    
+}
+lapply(1:2, function(cid) lapply(1:length(zscores[[1,1]]), plotBiomes, cid))
+legend('left', col = biome_cols, legend = names(biome_cols), pch = 15, ncol = 2, pt.cex = 3)
+dev.off()
+  browser() 
 start = c(-70.25+2, 8.25)
 
 j0 = colFromX(zscore[[1]], start[1])

@@ -7,12 +7,13 @@ files = c("a) control" = "4ave_pico2_foff.nc",
           
 tas_file = 'data/Figures_doug/Figure 2_6/LGM_R20C2_detr_ensemble_hdx_tmp_ave_cropped.nc'
          
-dat = lapply(paste0(dir, files), biome_assignment_from_file, tas_file)
+dat = biomeDat = lapply(paste0(dir, files), biome_assignment_from_file, tas_file)
 dat = lapply(dat, function(i) i + 1)
 
 ddat = dat
 ddat[-1] = lapply(ddat[-1], function(r) {r[r == ddat[[1]]] = 1; r})
    
+biome_cols = 
 cols = c(' ' = 'white'  , Thf = '#002200', Tdf = '#338800',
          wtf = '#005555', tef = '#00EE33', tdf = '#66DD00',
          bef = '#000088', bdf = '#330033',

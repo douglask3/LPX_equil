@@ -7,54 +7,54 @@ variable_from_biome <- function(id, gdd_threshold = 350, veg_treshold = c(0.6, 0
 							 height_threshold = 12) {
     
     ## fpc
-    if (id <= 8)
+    if (id <= 11)
         fpc = c(0.6, 0.8, 1.0)
-    else if (id == 9) 
+    else if (id == 12) 
         fpc = c(0.3, 0.45, 0.6)
-    else if (id == 10) 
+    else if (id == 13) 
         fpc = c(0.0, 0.15, 0.3)
     else fpc = c(0.0, 0.3, 0.6)
 
     names(fpc) = paste0("fpc_grid-", c("Min", "Mid", "Max"))
     
-    if (id <= 4)      
+    if (id <= 7)      
         height = c(10, 20, 9999)
-    else if (id <=8)
+    else if (id <=11)
         height = c(0,5, 10)
     else height = c(0, NaN, 9999)
 
     names(height) = paste0("height-", c("Min", "Mid", "Max"))
 
-    if (id ==8 || id >=11) 
+    if (id == 6 || id == 7 || id == 11 || id == 14 || id == 15) 
         gdd = c(0, 175, 350)
     else 
         gdd = c(350, 1000, 9999)
 
     names(gdd) = paste0("gdd-", c("Min", "Mid", "Max"))
     
-    if (id == 1 || id == 3) 
+    if (id == 1 || id == 3 || id == 4 || id == 6 || id == 9) 
         eg = c(0.5, 0.75, 1.0)
-    else if (id == 2 || id == 4)
+    else if (id == 2 || id == 5 || id == 7)
         eg = c(0, 0.25, 0.5)
     else
         eg = c(0, NaN, 1)
     
     names(eg) = paste0("evergreen-", c("Min", "Mid", "Max"))
 
-    if (id <= 2 || id == 5) 
+    if (id <= 2 || id == 8) 
         tr = c(0.5, 0.75, 1.0)
-    else if (id == 8 || id == 11 || id == 12)
+    else if (id == 6 || id == 7 || id == 11 || id == 14 || id == 15)
         tr = c(0, 0, 0)
-    else if (id == 9 || id == 10)
+    else if (id == 12 || id == 13)
         tr = c(0, 0.5, 1)
     else 
         tr = c(0, 0.25, 0.5)
     
     names(tr) = paste0("tropical-", c("Min", "Mid", "Max"))
 
-    if (id == 3 || id == 4 || id == 6 || id == 7)
+    if (id == 3 || id == 4 || id == 5 || id == 9 || id == 10)
         tm = c(0.5, 0.75, 1.0)
-    else if (id == 9 || id == 10)
+    else if (id == 12 || id == 13)
         tm = c(0, 0.5, 1.0)
     else
         tm = c(0, 0.25, 0.5)
@@ -64,6 +64,64 @@ variable_from_biome <- function(id, gdd_threshold = 350, veg_treshold = c(0.6, 0
     return(c(fpc, height, gdd, eg, tr, tm))
 }
 
+
+biome_assign_precalV <- function(fpc, eg, tr, tm, gdd, height) {
+    out = fpc
+    out[] = NaN
+    
+    fpc = cut_results(fpc, c(0.3, 0.6))
+    gdd = cut_results(gdd, 350)
+    height = cut_results(height, 10)
+    
+    #bl = cut_results(tr + tm, 0.5)
+    #bl[gdd ==2] = 2
+    tr = cut_results(tr, 0.5)
+    eg = cut_results(eg, 0.5)
+    tm = cut_results(tm, 0.5)
+    #tr[tm == 2] = 1
+    warmForest = fpc== 3 & gdd == 2 & height == 2
+        tropForest = warmForest & tr == 2
+
+            out[tropForest & eg == 2] = 1    
+            out[tropForest & eg == 1] = 2
+
+        tempForest = warmForest & tm == 2
+
+            out[tempForest & eg == 2] = 3
+            out[tempForest & eg == 1] = 5
+    
+    coldForest = fpc == 3 & gdd == 1 & height == 2
+         
+        tempForest = coldForest & tm == 2
+        
+            out[tempForest & eg == 2] = 4
+            out[tempForest & eg == 1] = 5
+
+        borelForest = coldForest & tm == 1
+
+            out[borelForest & eg == 2] = 6
+            out[borelForest & eg == 1] = 7
+    
+    savanna = fpc==3 & gdd == 2 & height == 1
+        out[savanna] = 8
+        out[savanna & tm == 2 &eg == 2] = 9            
+        out[savanna & tm == 2 & eg == 1] = 10
+        #out[savanna & tr == 2 & bl == 2] = 8
+        out[savanna & tr == 2] = 8
+        #browser()
+        out[savanna & tr == 1 & tm == 1] = 11
+
+    out[fpc == 3 & gdd == 1] = 14
+
+    out[fpc == 2 & gdd == 2] = 12
+    out[fpc == 2 & gdd == 1] = 15
+    
+    out[fpc == 1 & gdd == 2] = 13
+    out[fpc == 1 & gdd == 1] = 15
+    
+    return(out)
+
+}
 biome_assignment <- function(fpc, height, gdd = NULL,
 							 gdd_threshold = 350, veg_treshold = c(0.6, 0.3),
 							 height_threshold = 12) {
