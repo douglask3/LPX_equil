@@ -34,8 +34,10 @@ limitss = list(c(0, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 0.99),
                c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9),
                c(0, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 0.99),
                c(0, 100, 200, 300, 350, 400, 450),
-               c(0, 0.1, 0.2, 0.5, 1, 2, 4, 6, 8),
+               c(0, 1, 2, 4, 6, 8, 10, 15),
                c(0, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9))
+
+contours = list(0.5, 0.5, 0.5, 350, c(5, 10), c(0.3, 0.6))
 
 maxLab = list(1, 1, 1, NULL, NULL, NULL)
 
@@ -56,13 +58,13 @@ dlimitss1 = list(c(-6, -4, -2, -1, 1, 2, 4, 6),
                  seq(-4, 4),
                  c(-6, -4, -2, -1, 1, 2, 4, 6),
                  seq(-0.5, 0.5, 0.5),
-                 c(-1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2),
+                 c((-4):4),
                  seq(-4, 4))
 dlimitss2 = list(c(-0.8, -0.6, -0.4, -0.2, -0.1 , 0.1, 0.2, 0.4, 0.6, 0.8),
                  c(-0.8, -0.6, -0.4, -0.2, -0.1 , 0.1, 0.2, 0.4, 0.6, 0.8),
                  c(-0.6, -0.4, -0.2, -0.1, -0.05, 0.05, 0.1, 0.2, 0.4, 0.6),
                  c(-140, -120, -100, -80, 60, -40, -20, 0, 20),
-                 c(-6, -4, -2, -1, 1, 2, 4, 6),
+                 c(-10, -5, -2, -1, -0.5, -0.2, 0.2, 0.5, 1, 2, 5, 10),
                  c(-0.5, -0.4, -0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 0.4, 0.5))
 dcolss = list(c('#8e0152','#c51b7d','#de77ae','#f1b6da','#fde0ef',
                  '#f7f7f7','#e6f5d0','#b8e186','#7fbc41','#4d9221','#276419'),
@@ -77,7 +79,7 @@ dcolss = list(c('#8e0152','#c51b7d','#de77ae','#f1b6da','#fde0ef',
               rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5',
                     '#c7eae5','#80cdc1','#35978f','#01665e')))
 
-zlimits =  c(-4, -3, -2, -1, -0.1, 0.1, 1, 2, 3, 4)
+zlimits =  c(-8, -4, -2, -1, 0, 1, 2, 4, 8)
 zcols = rev(c('#7f3b08','#b35806','#e08214','#fdb863','#fee0b6','#f7f7f7','#d8daeb','#b2abd2','#8073ac','#542788','#2d004b'))
 
 conn_cols = c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e',
@@ -94,7 +96,7 @@ site_dat = as.matrix(site_dat[c("LONGITUDE", "LATITUDE", "POLLEN_TO_LPX_BIOME_NU
 site_dat = site_dat[!apply(site_dat, 1, function(i) any(is.na(i))), ]
 site_dat = cbind(site_dat, t(sapply(site_dat[,3], variable_from_biome)))
 
-apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dlimits2, dcols,
+apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlimits1, dlimits2, dcols,
                       trans = function(x) x, itrans = trans, maxLab) {
 ## Model data
     openDat <- function(file, cfile, varname) {
@@ -180,7 +182,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
     }
     zscores = lapply(dats, zscoring)
     czscore = lapply(cdat, zscoring)
-
+    
     if (T) {
     png(paste0("figs/", name, "_correction.png"), width = 7.2, height = 10, 
         res = pres, units = 'in')
@@ -188,8 +190,9 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
 #########################
 ## Plot variable       ##
 #########################
-    plotMap <- function(x, ..., text2 = '', text3 = '') {
+    plotMap <- function(x, ..., text2 = '', text3 = '', addContour = FALSE) {
         plot_map_standrd(x, ..., readyCut = FALSE, add_legend = FALSE)
+        if (addContour) contour(x, levels = contour, add = TRUE)
         #if (sites) points(site_dat[,1], site_dat[, 2], pch = 19)
         mtext(text3, side = 3)
     }
@@ -199,7 +202,8 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
     modnames = sapply(sapply(mod_files, function(file) tail(strsplit(file, '/')[[1]], 1)),
                       function(nm) strsplit(nm, "_fon.nc")[[1]][1])
     modnames = c(modnames, 'ensemble')
-    mapply(plotMap, dats, text3 = modnames, MoreArgs = list(limits = limits, cols = cols))
+    mapply(plotMap, dats, text3 = modnames,
+           MoreArgs = list(limits = limits, cols = cols, addContour = TRUE))
     mtext(side = 4, 'Model output')
     plotLeg(cols = cols, limits = limits, maxLab = maxLab)
     
@@ -208,10 +212,10 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
     plotLeg(cols = zcols, limits = zlimits)
 
     lapply(cors, plotMap, limits = dlimits1, cols = dcols)
-    mtext(side = 4, 'correction')
+    mtext(side = 4, 'bias')
     plotLeg(cols = dcols, limits = dlimits1)
 
-    lapply(cdat, plotMap, limits = limits, cols = cols)
+    lapply(cdat, plotMap, limits = limits, cols = cols, addContour = TRUE)
     mtext(side = 4, 'corrected output') 
     plotLeg(cols = cols, limits = limits)
    
@@ -231,7 +235,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, cols, dlimits1, dli
 ## Connectivity score       ##
 ##############################
 #zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
-#                 limitss, colss, dlimitss1, dlimitss2, dcolss,
+#                 limitss, contours, colss, dlimitss1, dlimitss2, dcolss,
 #                  transs, itranss, maxLab)
 
 plot_biomes <- function(r, name, tpoints = TRUE) {  
@@ -242,38 +246,44 @@ plot_biomes <- function(r, name, tpoints = TRUE) {
     if (tpoints) {
         points(site_dat[,1], site_dat[,2], pch = 19, cex = 1.3)
         points(site_dat[,1], site_dat[,2], col = 'white', pch = 19)
-        points(site_dat[,1], site_dat[,2], col = biome_cols[site_dat[,3]+1], pch = 19, cex = 0.7)
+        points(site_dat[,1], site_dat[,2], col = biome_cols[site_dat[,3]+1],
+               pch = 19, cex = 0.7)
     }
     return(unique(r))
 }
 modnames = c(sapply(sapply(mod_files, function(file) tail(strsplit(file, '/')[[1]], 1)),
                       function(nm) strsplit(nm, "_fon.nc")[[1]][1]), "Ensemble") 
-if (F) {
+if (T) {
 png("figs/bias_corrected_biome.png", height = 18, width = 7.0,  units = 'in', res = pres)
 par(mfcol = c(5, 2), mar = rep(0, 4), oma = rep(2, 4))
 plotBiomes <- function(modid, corid) {
     dat = lapply(zscores[2 + corid,], function(i) i[[modid]])
     biome = biome_assign_precalV(dat[["fpc"]], dat[["evergreen"]], dat[["tropical"]],
-                         dat[["temperate"]], dat[["gdd"]], dat[["height"]])
-    
+                         dat[["temperate"]], dat[["gdd"]], dat[["height"]])    
     
     if (modid == 1) modName = c('uncorrected', 'corrected')[corid] else modName = ''
     if (corid==1) tpoints = TRUE else tpoints = FALSE
     plot_biomes(biome+1, modName, tpoints)
+    test = test0 = (biome ==1) | (biome == 8 & dat[["height"]]>5)  
+    test = round(raster::aggregate(test, 2))>0
+   
+    xyt = xyFromCell(test, which(test[]))
+    points(xyt[,1], xyt[,2], cex = 0.5, col = biome_cols[2], pch = 19)
+    
     if (corid == 1) mtext(side = 2, modnames[modid], line = -2, ad = 0.8)    
     if (corid==1) axis(2) else axis(4)
     if (modid==1) axis(3)
-    if (modid==length(zscores[[1,1]])) axis(1)
-    
+    if (modid==length(zscores[[1,1]])) axis(1)   
+    return(biome)
 }
-lapply(1:2, function(cid) lapply(1:length(zscores[[1,1]]), plotBiomes, cid))
+biomes = lapply(1:2, function(cid) lapply(1:length(zscores[[1,1]]), plotBiomes, cid))
 legend('left', col = biome_cols, legend = names(biome_cols), pch = 15, ncol = 2, pt.cex = 3)
 dev.off()
 }
-start = c(-70.25+2, 8.25)
+start = c(-70, 0)
 
-j0 = colFromX(zscore[[1]], start[1])
-i0 = rowFromY(zscore[[1]], start[2])
+j0 = colFromX(zscores[[1,1]][[1]], start[1])
+i0 = rowFromY(zscores[[1,1]][[1]], start[2])
 
 iijj = lapply(c(-1, 0, 1), function(jj) sapply(c(-1, 0, 1), function(ii,jj) c(ii,jj), jj)) 
 iijj = do.call(cbind, iijj)
@@ -422,11 +432,11 @@ findMaps <- function(is1, is2, js1, js2, conn, rin, w) {
  }
 shinnyRA <- function(rin, zscore, w) {
 
-    if (is.raster(rin)) browser()
+    if (is.raster(rin)) browser()  else conn = rin
     nr = nrow(conn[[1]]); nc = ncol(conn[[1]])
     cis = list(2:nr,1:(nr-1))
     cjs = list(2:nc, 1:(nc-1))
-    for (shim in 1:50) {
+    for (shim in 1:1000) {
         print(shim)
         it1 = sample(1:2, 1); jt1 = sample(1:2, 1) 
         it2 = sample(1:2, 1); jt2 = sample(1:2, 1)
@@ -453,17 +463,25 @@ ruinModCor <- function(modID = 5,   correctID = 2) {
     for (i in 1:length(zscore)) zscore[[i]][] = allZs[,i]   
     
     conn = initaliseRW(zscore, ws, i0, j0,
-                       paste("zscore_pca_from_", length(zscore), modID, correctID, sep = '-'))
+                       paste("zscore_pca_from_correctedTr", length(zscore), modID, correctID, sep = '-'))
      
-    connS = shinnyRA(conn, zscore, ws)
+    conn = shinnyRA(conn, zscore, ws)
     #conn_scores = translanteRW2raster(conn, zscore) 
-    translanteRW2raster(connS, zscore)[[1]] 
+    
+    translanteRW2raster(conn, zscore)[[1]] 
 }
 #connS = lapply(1:2, function(cID) lapply(1:5, ruinModCor, cID))
+
 conn_cols = c('#ffe5ff','#ffbcf7','#fee391','#fec44f','#fe9929','#ec7014','#cc4c02','#993404','#662506')
-plotConn <- function(modid, conid, cols = conn_cols, limits = 0:10) {
+conn_cols = rev(c('#ffffd9','#edf8b1','#c7e9b4','#7fcdbb','#41b6c4','#1d91c0','#225ea8','#0c2c84'))
+conn_limits = c(1, 2, 5, 10, 15, 20, 30)
+plotConn <- function(modid, conid, cols = conn_cols, limits = conn_limits) {
     if (conid == 3) con = dif[[modid]] else con = connS[[conid]][[modid]]
-    plot_map_standrd(con, cols, limits, FALSE)  
+    plot_map_standrd(con, cols, limits, FALSE) 
+    if (conid<3)
+        contour(biomes[[conid]][[modid]]==1, add = T, levels = c(0.5), lwd = 1.5,
+                drawlabels = FALSE)
+    points(start[1], start[2], pch = 4, lwd = 2.5, cex = 2)
     grid()
     if (conid == 1) {
         mtext(line = -2, adj = 0.8, side = 2, modnames[modid])
@@ -477,15 +495,27 @@ plotConn <- function(modid, conid, cols = conn_cols, limits = 0:10) {
     }
     if (modid == 5) axis(1)
 }
-png("figs/connectivity_score.png", res = pres, units = 'in', height = 12, width = 7)
-par(mfcol = c(5, 3), mar = rep(0, 4), oma = rep(2, 4))
+png("figs/connectivity_score.png", res = pres, units = 'in', height = 12.8, width = 7)
+nmods = length(zscores[[1,1]])
+layout(rbind(cbind(1:nmods, nmods + 1:nmods, 2*nmods + 1:nmods), 3*nmods + c(1, 1, 2)),
+       heights = c(rep(1, nmods), 0.3)) 
+par(mar = rep(0, 4), oma = rep(2, 4))
 
 lapply(1:2, function(cons) lapply(1:5,  plotConn, cons))
 
 dif =  mapply('-', connS[[2]], connS[[1]])
-pconn_cols = rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e'))
-lapply(1:5, plotConn, 3, pconn_cols, c(-3, -2, -1, -0.5, -0.2, -0.1, 0.1, 0.2, 0.5, 1, 2, 3))
-dev.off()
+dconn_cols = rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#f5f5f5','#c7eae5','#80cdc1','#35978f','#01665e'))
+dconn_limits = c(-10, -5, -2, -1, -0.5, 0.5, 1, 2, 5, 10)
+lapply(1:5, plotConn, 3, dconn_cols, dconn_limits)
+
+par(mar = c(0, 0, 2, 0))
+add_raster_legend2(dat = connS[[1]][[1]], cols = conn_cols, limits = conn_limits,
+                   transpose = F, plot_loc = c(0.1, 0.9, 0.4, 0.6), srt = 0, 
+                   extend_max = TRUE, add = FALSE)
+add_raster_legend2(dat = dif[[1]], cols = dconn_cols, limits = dconn_limits, 
+                   transpose = F, plot_loc = c(0.1, 0.9, 0.4, 0.6), srt = 0, 
+                   extend_max = TRUE, extend_min = TRUE, add = FALSE, oneSideLabels = FALSE)
+dev.off()  
 browser() 
 
 targetRW <- function(rin, zscore, ninter) {
