@@ -1,10 +1,11 @@
-dir = 'data/Figures_doug/Figure 2_6/'
+biome_dir = 'data/Figures_doug/Figure 2_6/'
 
-files = c("a) control" = "4ave_pico2_foff.nc",
-          'b) fire only' = "4ave_pico2_fon.nc",
-          'c) low [~CO2~]\nonly' = "4ave_foff.nc" , 
-          "d) fire &\nlow [~CO2~]" = "4ave_fon.nc")
+biome_files = c("a) control" = "4ave_pico2_foff.nc",
+                "b) fire only" = "4ave_pico2_fon.nc",
+                "c) low [~CO2~]\nonly" = "4ave_foff.nc" , 
+                "d) fire &\nlow [~CO2~]" = "4ave_fon.nc")
           
+
 tas_file = 'data/Figures_doug/Figure 2_6/LGM_R20C2_detr_ensemble_hdx_tmp_ave_cropped.nc'
          
 dat = biomeDat = lapply(paste0(dir, files), biome_assignment_from_file, tas_file)

@@ -124,8 +124,18 @@ biome_assign_precalV <- function(fpc, eg, tr, tm, gdd, height) {
 }
 biome_assignment <- function(fpc, height, gdd = NULL,
 							 gdd_threshold = 350, veg_treshold = c(0.6, 0.3),
-							 height_threshold = 12) {
+							 height_threshold = 12, quick = TRUE) {
 
+                             
+    if (!quick) {
+        dis <- function(x) {
+            x[x>9E9] = NaN
+            raster::disaggregate(x, fact = 4, method = 'bilinear')
+        }
+        fpc = dis(fpc)
+        height = dis(height)
+        if (!is.null(gdd)) gdd = dis(gdd)
+    }
 	# matrix describing which number in outputted raster corrisponds to whih biome
 	biome_key = cbind(c(1:15), 
 	                  c('Tropical Humid Forest', 'Tropical Dry Forest', 'Warm Temperate Forest', 'Temperate Evergreen Forest', 'Temperate Deciduous Forest',
@@ -158,7 +168,7 @@ biome_assignment <- function(fpc, height, gdd = NULL,
 	biome[] = 0.0
 	
 	## Assign biomes
-	
+    
 		  #temp	  #life form  #phenology  #height
 	biome[        wood       & tropical &  tall &  evergreen] = 1  #Thf
 	biome[        wood       & tropical &  tall & !evergreen] = 2  #Tdf
@@ -182,13 +192,13 @@ biome_assignment <- function(fpc, height, gdd = NULL,
 	return(list(biome, biome_key))
 }
 
-biome_assignment_from_file <- function(filename_lpx, filename_tas) {
+biome_assignment_from_file <- function(filename_lpx, filename_tas, ...) {
     
     fpc = brick(filename_lpx, varname = 'fpc_grid')
     height   = raster(filename_lpx, varname = 'height')
     gdd = raster(filename_tas) > 2
     gdd = gdd * 500
     
-    c(biome, nn) := biome_assignment(fpc, height, gdd)
+    c(biome, nn) := biome_assignment(fpc, height, gdd, ...)
     return(biome)
 }

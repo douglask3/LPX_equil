@@ -17,7 +17,7 @@ plotBiomeScatter <- function(r, nm, ...) {
     tas    = tas   [mask]
     r      = r     [mask]
     plot(tas, precip, type = 'n', xlim = c(-5, 26), xaxt = 'n', yaxt = 'n', ...)
-
+    grid()
     col = cols[r]
     
     addPointsStandard(tas, precip, col)
@@ -57,7 +57,7 @@ plotFigure <- function(dat, name, ...) {
     mtext.units(side = 1, 'MAT ~DEG~C', outer = TRUE, line = -7)
     dev.off()
 }
-
+c(dat, ddat, files) := load_biomes(quick = TRUE)
 plotFigure( dat, '')
 plotFigure(ddat, '-diff')
 plotFigure( dat, '-log', log = 'y')

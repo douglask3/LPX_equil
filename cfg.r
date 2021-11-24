@@ -1,3 +1,4 @@
+source("libs/return_multiple_from_functions.r")
 source('../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r')
 
 sourceAllLibs('../gitProjectExtras/gitBasedProjects/R')
@@ -6,7 +7,7 @@ sourceAllLibs()
 #source('../gitProjectExtras/package_git2r.r')
 #config(repository(), user.name="Douglas Kelley", user.email="douglas.i.kelley@gmail.com")
 
-library(benchmarkMetrics)
+#library(benchmarkMetrics)
 #library(gitBasedProjects)
 library(raster)
 library(ncdf4)
