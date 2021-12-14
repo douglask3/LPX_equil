@@ -1,8 +1,12 @@
-#source("cfg.r")
+
+source('../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r')
+sourceAllLibs('../rasterextrafuns/rasterPlotFunctions/R/', trace = FALSE)
+sourceAllLibs('../rasterextrafuns/rasterExtras/R/', trace = FALSE)
+
 library(raster)
-library(rasterExtras)
+#library(rasterExtras)
 library(fields)
-source("libs/biome_assign.r")
+sourceAllLibs("libs/", trace = FALSE)
 graphics.off()
 ##################
 ## setup/params ##
@@ -132,7 +136,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
         return(dat)
     }
     
-    dats = mapply(openDat, mod_files, tas_file, MoreArgs = list(varname))
+    dats = mapply(openDat, mod_files, tas_files, MoreArgs = list(varname))
     dats = c(dats, mean(layer.apply(dats, function(i) i )))
       
 #########################
@@ -142,10 +146,16 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
         if (varname == "fpc_grid") dat[dat > 1] = 1
         rxy = xyFromCell(dat, 1:length(dat))
         getCell <- function(xy) {
-            sqd = (rxy[,1]-xy[1])^2 + (rxy[,2] - xy[2])^2
+
+            #removeQM <- function(x) if (substr(x, 1,1) = "?") x = substr(x, 2, nchar9x)
+            sqd = (rxy[,1]-as.numeric(xy[1]))^2 + (rxy[,2] - as.numeric(xy[2]))^2
             dif = sqrt(sqd)
+            
             index = which.min(dif)
-            c(rxy[index,], dat[index])
+            out = c(rxy[index,], dat[index])
+            #print(length(out))
+            if (length(out) != 3) browser()
+            return(out)
         }
 
         mod = apply(site_dat[,1:2], 1, getCell)
@@ -154,7 +164,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
         calDif <- function(x) {
             x0 = x
             if (any(is.na(x))) return(NaN)
-            x = trans(x, length(dats[[1]]))
+            x = trans(as.numeric(x), length(dats[[1]]))
             
             if (x[1] < x[2]) out = (x[1] - x[2])
             else if (x[1] > x[4])  out = (x[1] - x[4])
@@ -234,9 +244,9 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
 ##############################
 ## Connectivity score       ##
 ##############################
-#zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
-#                 limitss, contours, colss, dlimitss1, dlimitss2, dcolss,
-#                  transs, itranss, maxLab)
+zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
+                 limitss, contours, colss, dlimitss1, dlimitss2, dcolss,
+                  transs, itranss, maxLab)
 
 plot_biomes <- function(r, name, tpoints = TRUE) {  
     
