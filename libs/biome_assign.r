@@ -18,10 +18,10 @@ variable_from_biome <- function(id, gdd_threshold = 350, veg_treshold = c(0.6, 0
     names(fpc) = paste0("fpc_grid-", c("Min", "Mid", "Max"))
     
     if (id <= 7)      
-        height = c(10, 20, 9999)
+        height = c(10, 20, 120)
     else if (id <=11)
         height = c(0,5, 10)
-    else height = c(0, NaN, 9999)
+    else height = c(0, NaN, 120)
 
     names(height) = paste0("height-", c("Min", "Mid", "Max"))
 
