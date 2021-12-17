@@ -106,7 +106,8 @@ plotClimDis <- function(clim, name, col, lim, spec = NULL) {
 
 outC = mapply(plotClimDis, clims, names(clims),cols, limits)
 plotFindDis <-function(spec) 
-    out = suppressWarnings(mapply(plotClimDis, clims, '', cols, limits, MoreArgs = list(spec = spec)))
+    out = suppressWarnings(mapply(plotClimDis, clims, '', cols, limits, 
+                                  MoreArgs = list(spec = spec)))
 
 specClims = lapply(specs, plotFindDis)
 
@@ -170,3 +171,49 @@ overlaySpecies(1, 2, 1)
 overlaySpecies(2, 3, 2)
 overlaySpecies(3, 1, 3)
 
+
+den = 21
+lims = apply(outC, 2, function(i) seq(min(i), max(i), length.out = den + 1))
+
+outDir = "../outputs/bcObs-den/"
+makeDir(outDir)
+deb4BC <- function(bc, name, mask = NULL) {
+    bc = bc[!apply(bc, 1, function(i) any(is.na(i))),]
+    outFile = paste0(outDir, name, "-", den, ".Rd")
+    print(outFile)
+    if (file.exists(outFile)) {
+        load(outFile)
+        return(dmat)
+    }
+    varDen <- function(ijk, dmat, bc) {
+        if (!is.null(mask) && mask[ijk[1], ijk[2], ijk[3]]) return(dmat)
+        inLim <- function(i) {
+            id = ijk[i] + c(0, 1)
+            lim = lims[id,i]
+            out = bc[,i] > lim[1] & lim[2] > bc[,i]
+            #rep(TRUE, length(out))
+        }
+        test = sapply(1:3, inLim)    
+        dmat[ijk[1], ijk[2], ijk[3]] = sum(apply(test, 1, all))        
+        return(dmat)
+    }
+    
+    dmat = array(0, dim = rep(den-1, ncol(outC)))
+
+    index = 1:(den-1)
+    for (i in index) for (j in index) for (k in index)
+        dmat = varDen(c(i,j,k), dmat, bc)
+    save(lims, dmat, file = outFile)
+
+    return(dmat)
+}
+
+allDmat = deb4BC(outC, 'All Continent')
+
+specDmat = mapply(deb4BC, specClims, names, MoreArgs = list(mask = allDmat == 0),
+                  SIMPLIFY = FALSE)
+specDmatNorm = lapply(specDmat, '/', allDmat)
+specDmatNorm = lapply(specDmatNorm, function(i) i /sum(i, na.rm = TRUE))
+
+
+save(lims, allDmat, specDmat, specDmatNorm, file = paste0(outDir, 'all.Rd'))
