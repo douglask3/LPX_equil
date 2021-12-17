@@ -18,10 +18,13 @@ xlims = list(c(0, 1), c(0, 120), c(0, 600))
 transs  = list(logit, function(x, ...) logit(x/120, ...), log)
 itranss = list(logistic, function(x, ...) 120 * logistic(x, ...), exp)
 
-ptranss = list(blankFun, function(x) 1-exp(-x*0.1), blankFun)
-pitranss = list(blankFun, function(x) -10*log(1-x), blankFun)
-ptranss = list(blankFun, function(x) x/120, function(x) 1-exp(-x*0.1))
-pitranss = list(blankFun, function(x) x*120, function(x) -10*log(1-x))
+logisticit <- function(x, a) logistic(a*logit(x))
+
+logisticitN <- function(x, ...)
+    (logisticit(x, ...) - logisticit(0, ...))/(logisticit(1, ...) - logisticit(0, ...))
+
+ptranss = list(function(x) logisticitN(x, 0.1) , function(x) (x/120)^0.2, function(x) 1-exp(-x*0.1))
+pitranss = list(function(x) logisticitN(x, 10), function(x) (x^5)*120, function(x) -10*log(1-x))
 
 ForestCentres = list(CNRM   = list(c(-70, -0), c(-53, -08), c(-60, -10), c(-67, -14)),
                      ENS    = list(c(-72, -1), c(-54, -09), c(-61, -09), c(-66, -14)),
@@ -30,9 +33,6 @@ ForestCentres = list(CNRM   = list(c(-70, -0), c(-53, -08), c(-60, -10), c(-67, 
                      MIROC  = list(c(-75, -2), c(-51, -05), c(-61, -08), c(-66, -13)))
                 
 dir = '../outputs/'
-
-
-
 
 findBioclimPnts <- function(dat, ForestCentre) {
     findPnt <- function(pnt)  
@@ -124,7 +124,7 @@ selectPossibleNiche <- function(tcen) {
 
 
 grab_cache = TRUE
-nboots = 100
+nboots = 220
 testRandomNiche <- function(ntest, model, experiment, ForestCentre, tcen) {
     tfile = paste0("../temp/randomNicheTest--gdd-", model, '-', experiment, '-', ntest, ".Rd")
     print(tfile)
@@ -158,7 +158,7 @@ run4model <- function(model, ForestCentre) {
         tcen = mapply(function(F,i) F(i), transs, centres)
         
         out = runNicheBoots(model, experiment, ForestCentre = ForestCentre, tcen = tcen)
-        
+        return(list(out, centres))
     }
     
     outs = lapply(experiments, run4Exp)
@@ -170,4 +170,83 @@ ForestCentre = ForestCentres[[1]]
 
 experiments = list.files(paste0(dir, model, '/'))
 experiment = experiments[1]
-outss = mapply(run4model, models, ForestCentres)
+outss = mapply(run4model, models, ForestCentres, SIMPLIFY = FALSE)
+
+
+
+addAxis <- function(i, side) {
+    at = seq(0, 1, length.out = 11)
+    
+    labels = pitranss[[i]](at)
+    if (labels[1] == 0 && tail(labels, 1) == 1) {
+        test = labels>0.5
+        labels[test] = 1-labels[test]
+        labels = signif(labels, 1)
+        labels[test] = 1 - labels[test]
+    } else labels = signif(labels, 1)
+    at = ptranss[[i]](labels)
+    labels[labels < 9E-9] = 0
+    test = labels>0.9 & labels < 1
+    labels[!test] = signif(labels[!test], 1)
+    
+    axis(side, at = at, labels = labels)
+}
+
+x = seq(-1, 1, 0.001)
+y = sqrt(1-x^2)
+x = c(x, rev(x)); y = c(y, -rev(y))
+
+
+plotNichProb <- function(i, j, out) {
+    
+    centres = out[[2]]
+    out = out[[1]]
+    xc = ptranss[[i]](centres[[i]]); yc = ptranss[[j]](centres[[j]])
+    dev.off()
+    plot(xc, yc, xlim = c(0,1), ylim = c(0,1), type = 'n', axes = FALSE, xlab = '', ylab = '')
+    addAxis(i, 1)
+    addAxis(j, 2)
+    mtext(vars[i], side = 1, line = 2)
+    mtext(vars[j], side = 2, line = 2)
+    polygon(c(0, 1, 1, 0), c(0, 0, 1, 1), col = '#110033')
+    
+    addPoly <- function(fail, col, nc) {
+        info = fail[[1]]
+
+        shiftScale <- function(x, i){
+            #x = logit(x)
+            x = (x*diff(info[[i]])/2 + mean(info[[i]]))
+            x = ptranss[[i]](itranss[[i]](x))
+        }
+        xt = shiftScale(x, i); yt = shiftScale(y, j)
+        #browser()
+        #xt = ptranss[[i]](xt); yt = ptranss[[i]](yt)
+        polygon(xt, yt, col = make.transparent(col, 1-1/nc), border = NA)
+    }
+    addPolys <- function(id, col) {
+        con = out[sapply(out, function(i) i[[2]] == id)]                
+        lapply(con, addPoly, col, length(con))
+    }
+    #addPolys(0, 'white')#'#110033')
+    #addPolys(2, '#FF0000')
+    points(xc, yc, pch = 4, col = 'red')
+    addPolys(3, 'white')    
+    browser()
+}
+plotNiches <- function(..., model, experiment)   {                     
+    options(repr.plot.width=12, repr.plot.height=4)
+    par(mfrow = c(1, 3))
+    nn = plotNichProb(1, 2, ...)
+    nn = plotNichProb(2, 3, ...)
+    nn = plotNichProb(3, 1, ...)
+    mtext(side = 4, paste0(model, '-', experiment), line = 1, xpd = TRUE)
+}
+
+plotModel <- function(outs, model)
+    mapply(plotNiches, outs, experiment = experiments, MoreArgs = list(model = model))
+    
+                         
+nn = mapply(plotModel, outss, models)
+
+
+#outss[[1]][[1]][[1]]                       
