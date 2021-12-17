@@ -11,9 +11,14 @@ graphics.off()
 
 matrix2list <- function(x, dim = 2) lapply(apply(x, dim, list), unlist) 
 
+
+
+
+
+
 vars = c("fpc", "height", "gdd")
 
-xlims = list(c(0, 1), c(0, 120), c(0, 600))
+xlims = list(c(0, 1), c(0, 120), c(0, 1000))
 
 transs  = list(logit, function(x, ...) logit(x/120, ...), log)
 itranss = list(logistic, function(x, ...) 120 * logistic(x, ...), exp)
@@ -23,8 +28,9 @@ logisticit <- function(x, a) logistic(a*logit(x))
 logisticitN <- function(x, ...)
     (logisticit(x, ...) - logisticit(0, ...))/(logisticit(1, ...) - logisticit(0, ...))
 
-ptranss = list(function(x) logisticitN(x, 0.1) , function(x) (x/120)^0.2, function(x) 1-exp(-x*0.1))
-pitranss = list(function(x) logisticitN(x, 10), function(x) (x^5)*120, function(x) -10*log(1-x))
+ptranss = list(function(x) logisticitN(x, 0.1) , function(x) (x/120)^0.2, function(x) 1-exp(-x*0.001))
+pitranss = list(function(x) logisticitN(x, 10), function(x) (x^5)*120, function(x) -1000*log(1-x))
+
 
 ForestCentres = list(CNRM   = list(c(-70, -0), c(-53, -08), c(-60, -10), c(-67, -14)),
                      ENS    = list(c(-72, -1), c(-54, -09), c(-61, -09), c(-66, -14)),
@@ -33,6 +39,12 @@ ForestCentres = list(CNRM   = list(c(-70, -0), c(-53, -08), c(-60, -10), c(-67, 
                      MIROC  = list(c(-75, -2), c(-51, -05), c(-61, -08), c(-66, -13)))
                 
 dir = '../outputs/'
+                
+speciesDist = "../outputs/bcObs-den/all.Rd"
+
+
+
+
 
 findBioclimPnts <- function(dat, ForestCentre) {
     findPnt <- function(pnt)  
@@ -40,7 +52,6 @@ findBioclimPnts <- function(dat, ForestCentre) {
     
     sapply(ForestCentre, findPnt)    
 }
-
 
 
 
@@ -57,10 +68,17 @@ testWhereInSphere <- function(bcranges, dats, transs) {
     out[out == 0] = NaN
     
     return(out)                              
-}                     
+}  
 
 
 
+
+
+
+testNiche <- function(bcranges, ForestCentre, ...) {
+    inSphere = testWhereInSphere(bcranges, ...)
+    
+    if (is.na(mean(inSphere[], na.rm = TRUE))) {
 testNiche <- function(bcranges, ForestCentre, ...) {
     inSphere = testWhereInSphere(bcranges, ...)
     
@@ -85,10 +103,11 @@ testNiche <- function(bcranges, ForestCentre, ...) {
     Cpols = sapply(ForestCentre, findPntInPol)
     if (all(is.na(Cpols))) out = 1 else if (any(is.na(Cpols)))  browser() else if (var(Cpols) > 0) out = 3 else out = 4
     return(c(out))
-}  
+} 
 
-#bcranges
-#testNiche(bcranges, ForestCentre, dats, transs)
+
+
+
 
 randomBCrange <- function(i, continent_range, inRange = TRUE,  id = NULL) {    
     if (is.null(id))
@@ -102,7 +121,8 @@ randomBCrange <- function(i, continent_range, inRange = TRUE,  id = NULL) {
     
     bcrange
 }
-#id = sample(1:nrow(continent_range), 1)
+
+
 selectPossibleNiche <- function(tcen) {
     dis = 2 
     id = sample(1:nrow(tcen), 1)
@@ -118,13 +138,14 @@ selectPossibleNiche <- function(tcen) {
     
     return(bcranges)
 }
-#bcranges = selectPossibleNiche(tcen)
-#bcranges
+
+
+
 
 
 
 grab_cache = TRUE
-nboots = 220
+nboots = 300
 testRandomNiche <- function(ntest, model, experiment, ForestCentre, tcen) {
     tfile = paste0("../temp/randomNicheTest--gdd-", model, '-', experiment, '-', ntest, ".Rd")
     print(tfile)
@@ -145,6 +166,11 @@ runNicheBoots <- function(...)
     out = lapply(1:nboots, testRandomNiche, ...)
 
 
+
+
+
+
+
 run4model <- function(model, ForestCentre) {
     experiments = list.files(paste0(dir, model, '/'))
     run4Exp <- function(experiment) {
@@ -159,10 +185,14 @@ run4model <- function(model, ForestCentre) {
         
         out = runNicheBoots(model, experiment, ForestCentre = ForestCentre, tcen = tcen)
         return(list(out, centres))
+        
     }
     
-    outs = lapply(experiments, run4Exp)
+    lapply(experiments, run4Exp)
 }
+
+
+
 models = list.files(dir)
 model = models[1]
 ForestCentre = ForestCentres[[1]]
@@ -171,6 +201,12 @@ ForestCentre = ForestCentres[[1]]
 experiments = list.files(paste0(dir, model, '/'))
 experiment = experiments[1]
 outss = mapply(run4model, models, ForestCentres, SIMPLIFY = FALSE)
+
+
+
+
+
+
 
 
 
@@ -192,6 +228,10 @@ addAxis <- function(i, side) {
     axis(side, at = at, labels = labels)
 }
 
+
+
+
+
 x = seq(-1, 1, 0.001)
 y = sqrt(1-x^2)
 x = c(x, rev(x)); y = c(y, -rev(y))
@@ -202,7 +242,7 @@ plotNichProb <- function(i, j, out) {
     centres = out[[2]]
     out = out[[1]]
     xc = ptranss[[i]](centres[[i]]); yc = ptranss[[j]](centres[[j]])
-    dev.off()
+    
     plot(xc, yc, xlim = c(0,1), ylim = c(0,1), type = 'n', axes = FALSE, xlab = '', ylab = '')
     addAxis(i, 1)
     addAxis(j, 2)
@@ -221,8 +261,9 @@ plotNichProb <- function(i, j, out) {
         xt = shiftScale(x, i); yt = shiftScale(y, j)
         #browser()
         #xt = ptranss[[i]](xt); yt = ptranss[[i]](yt)
-        polygon(xt, yt, col = make.transparent(col, 1-1/nc), border = NA)
+        polygon(xt, yt, col = make.transparent(col, min(0.99, 1-1/nc)), border = NA)
     }
+    
     addPolys <- function(id, col) {
         con = out[sapply(out, function(i) i[[2]] == id)]                
         lapply(con, addPoly, col, length(con))
@@ -230,9 +271,10 @@ plotNichProb <- function(i, j, out) {
     #addPolys(0, 'white')#'#110033')
     #addPolys(2, '#FF0000')
     points(xc, yc, pch = 4, col = 'red')
-    addPolys(3, 'white')    
-    browser()
+    addPolys(3, 'white') 
+    points(xc, yc, pch = 4, col = 'red')
 }
+                         
 plotNiches <- function(..., model, experiment)   {                     
     options(repr.plot.width=12, repr.plot.height=4)
     par(mfrow = c(1, 3))
@@ -247,6 +289,8 @@ plotModel <- function(outs, model)
     
                          
 nn = mapply(plotModel, outss, models)
-
-
 #outss[[1]][[1]][[1]]                       
+
+
+
+                 
