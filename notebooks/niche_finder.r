@@ -75,10 +75,7 @@ testWhereInSphere <- function(bcranges, dats, transs) {
 
 
 
-testNiche <- function(bcranges, ForestCentre, ...) {
-    inSphere = testWhereInSphere(bcranges, ...)
-    
-    if (is.na(mean(inSphere[], na.rm = TRUE))) {
+
 testNiche <- function(bcranges, ForestCentre, ...) {
     inSphere = testWhereInSphere(bcranges, ...)
     
@@ -142,12 +139,36 @@ selectPossibleNiche <- function(tcen) {
 
 
 
+load(speciesDist)
+lims = lims[-1,] - diff(lims)/2
+tlims = cbind(rep(lims[,1], each = nrow(lims)^2), 
+              rep(lims[,2], each = nrow(lims)), 
+              lims[,3])
 
 
-grab_cache = TRUE
-nboots = 300
+pMat = array(0, dim = dim(specDmat[[1]]))
+#nicheProb <- function(out) {
+#    print("yay")
+#    out = out[[1]]
+    pMatFind <- function(info) {
+        #info = info[[1]]
+        #mn = sapply(info, mean)
+        #rd = sapply(info, function(i) (i[2] - i[1])/2)
+        dis = testWhereInSphere(info, matrix2list(tlims), transs)
+        pMat[] = apply(dis, 1, function(i) sqrt(sum(i^2)))<1
+        return(pMat)
+    }
+#    pMats =  lapply(out, pMatFind)
+#}
+
+#nichP = lapply(outss, lapply, nicheProb)
+
+
+
+grab_cache = FALSE
+nboots = 10
 testRandomNiche <- function(ntest, model, experiment, ForestCentre, tcen) {
-    tfile = paste0("../temp/randomNicheTest--gdd-", model, '-', experiment, '-', ntest, ".Rd")
+    tfile = paste0("../temp/randomNicheTest--gdd-2", model, '-', experiment, '-', ntest, ".Rd")
     print(tfile)
     
     #print(file.exists(tfile))
@@ -157,10 +178,12 @@ testRandomNiche <- function(ntest, model, experiment, ForestCentre, tcen) {
         bcranges = selectPossibleNiche(tcen)#lapply(1:3, randomBCrange, id = id)
         
         test = testNiche(bcranges, ForestCentre, dats, transs)
-        save(bcranges, test, file = tfile)
+        pMatout = pMatFind(bcranges)
+        
+        save(bcranges, test, pMatout, file = tfile)
     }
     print(test)
-    return(list(bcranges, test))
+    return(list(bcranges, test, pMatout))
 }
 runNicheBoots <- function(...)
     out = lapply(1:nboots, testRandomNiche, ...)
@@ -194,6 +217,7 @@ run4model <- function(model, ForestCentre) {
 
 
 models = list.files(dir)
+models = models[!grepl("bcObs-den", models)]
 model = models[1]
 ForestCentre = ForestCentres[[1]]
 
@@ -201,7 +225,7 @@ ForestCentre = ForestCentres[[1]]
 experiments = list.files(paste0(dir, model, '/'))
 experiment = experiments[1]
 outss = mapply(run4model, models, ForestCentres, SIMPLIFY = FALSE)
-
+browser()
 
 
 
@@ -288,7 +312,7 @@ plotModel <- function(outs, model)
     mapply(plotNiches, outs, experiment = experiments, MoreArgs = list(model = model))
     
                          
-nn = mapply(plotModel, outss, models)
+#nn = mapply(plotModel, outss, models)
 #outss[[1]][[1]][[1]]                       
 
 
