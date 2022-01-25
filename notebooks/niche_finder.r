@@ -9,18 +9,15 @@ library(fields)
 sourceAllLibs("../libs/", trace = FALSE)
 graphics.off()
 
-matrix2list <- function(x, dim = 2) lapply(apply(x, dim, list), unlist) 
 
-
-
-
+##########################################
 
 
 vars = c("fpc", "height", "gdd")
 
-xlims = list(c(0, 1), c(0, 120), c(0, 1000))
-
-transs  = list(logit, function(x, ...) logit(x/120, ...), log)
+xlims = list(c(0, 1), c(0, 120), c(0, 10000))
+logit5 <- function(x) logit(x, exp(5))
+transs  = list(logit5, function(x, ...) logit5(x/120, ...), log)
 itranss = list(logistic, function(x, ...) 120 * logistic(x, ...), exp)
 
 logisticit <- function(x, a) logistic(a*logit(x))
@@ -28,8 +25,8 @@ logisticit <- function(x, a) logistic(a*logit(x))
 logisticitN <- function(x, ...)
     (logisticit(x, ...) - logisticit(0, ...))/(logisticit(1, ...) - logisticit(0, ...))
 
-ptranss = list(function(x) logisticitN(x, 0.1) , function(x) (x/120)^0.2, function(x) 1-exp(-x*0.001))
-pitranss = list(function(x) logisticitN(x, 10), function(x) (x^5)*120, function(x) -1000*log(1-x))
+ptranss = list(function(x) logisticitN(x, 0.1) , function(x) (x/120)^0.2, function(x) 1-exp(-x*0.0001))
+pitranss = list(function(x) logisticitN(x, 10), function(x) (x^5)*120, function(x) -10000*log(1-x))
 
 
 ForestCentres = list(CNRM   = list(c(-70, -0), c(-53, -08), c(-60, -10), c(-67, -14)),
@@ -37,6 +34,13 @@ ForestCentres = list(CNRM   = list(c(-70, -0), c(-53, -08), c(-60, -10), c(-67, 
                      FGOALs = list(c(-70, -0), c(-55, -08), c(-60, -10), c(-67, -14)),
                      HADGEM = list(c(-70, -0), c(-52, -06), c(-67, -10)),
                      MIROC  = list(c(-75, -2), c(-51, -05), c(-61, -08), c(-66, -13)))
+    
+                
+SavannaCentres = list(CNRM   = list(c(-55, 3), c(-58, -23)),
+                      FGOALS = list(c(-60, 5), c(-57, -18)),
+                      HADGEM = list(c(-55, 4), c(-45, -12)),
+                      MIROC  = list(c(-55, 3), c(-42, -7)),
+                      ENS    = list(c(-55, 3), c(-55, -18)))   
                 
 dir = '../outputs/'
                 
@@ -44,7 +48,7 @@ speciesDist = "../outputs/bcObs-den/all.Rd"
 
 
 
-
+############################################
 
 findBioclimPnts <- function(dat, ForestCentre) {
     findPnt <- function(pnt)  
@@ -53,7 +57,7 @@ findBioclimPnts <- function(dat, ForestCentre) {
     sapply(ForestCentre, findPnt)    
 }
 
-
+################################################
 
 testWhereInSphere <- function(bcranges, dats, transs) {
     shift = sapply(bcranges, mean)
@@ -70,11 +74,7 @@ testWhereInSphere <- function(bcranges, dats, transs) {
     return(out)                              
 }  
 
-
-
-
-
-
+######################################################
 
 testNiche <- function(bcranges, ForestCentre, ...) {
     inSphere = testWhereInSphere(bcranges, ...)
@@ -99,12 +99,10 @@ testNiche <- function(bcranges, ForestCentre, ...) {
     
     Cpols = sapply(ForestCentre, findPntInPol)
     if (all(is.na(Cpols))) out = 1 else if (any(is.na(Cpols)))  browser() else if (var(Cpols) > 0) out = 3 else out = 4
-    return(c(out))
+    return(c(out, inSphere))
 } 
 
-
-
-
+#################################################################
 
 randomBCrange <- function(i, continent_range, inRange = TRUE,  id = NULL) {    
     if (is.null(id))
@@ -112,7 +110,9 @@ randomBCrange <- function(i, continent_range, inRange = TRUE,  id = NULL) {
     else
         mu = continent_range[id, i]
     
-    sd = runif(1, 0, 1)
+    mn = logistic(max(abs(continent_range[,i]-mu)))
+    
+    sd = runif(1, mn, 1)
     bcrange = mu + c(-1, 1) * logit(sd)
     bcrange = sort(bcrange)
     
@@ -124,6 +124,7 @@ selectPossibleNiche <- function(tcen) {
     dis = 2 
     id = sample(1:nrow(tcen), 1)
     p = sds = 0
+    #print(tcen); stop()
     while( max(dis) > 1) {
         p = p + 1
         bcranges = lapply(1:3, randomBCrange, continent_range = tcen, id = id)
@@ -136,8 +137,7 @@ selectPossibleNiche <- function(tcen) {
     return(bcranges)
 }
 
-
-
+#############################################################
 
 load(speciesDist)
 lims = lims[-1,] - diff(lims)/2
@@ -145,56 +145,59 @@ tlims = cbind(rep(lims[,1], each = nrow(lims)^2),
               rep(lims[,2], each = nrow(lims)), 
               lims[,3])
 
+pMat = array(0, dim = dim(specDmat[[1]])) 
 
-pMat = array(0, dim = dim(specDmat[[1]]))
-#nicheProb <- function(out) {
-#    print("yay")
-#    out = out[[1]]
-    pMatFind <- function(info) {
-        #info = info[[1]]
-        #mn = sapply(info, mean)
-        #rd = sapply(info, function(i) (i[2] - i[1])/2)
-        dis = testWhereInSphere(info, matrix2list(tlims), transs)
-        pMat[] = apply(dis, 1, function(i) sqrt(sum(i^2)))<1
-        return(pMat)
-    }
-#    pMats =  lapply(out, pMatFind)
-#}
+pMatFind <- function(info) {
+    dis = testWhereInSphere(info, matrix2list(tlims), transs)
+    pMat[] = apply(dis, 1, function(i) sqrt(sum(i^2)))<1
+    return(pMat)
+}
 
-#nichP = lapply(outss, lapply, nicheProb)
+###################################################
 
-
-
-grab_cache = FALSE
-nboots = 10
-testRandomNiche <- function(ntest, model, experiment, ForestCentre, tcen) {
-    tfile = paste0("../temp/randomNicheTest--gdd-2", model, '-', experiment, '-', ntest, ".Rd")
+grab_cache = T
+nboots = 1000
+nniches = 100
+testRandomNiche <- function(ntest, model, experiment, ForestCentre, tcen, extraName = '') {
+    tfile = paste0("../temp/randomNicheTest--gdd-2-inSphere-", model, '-', experiment, '-', 
+                   ntest, extraName, ".Rd")
+    nfile = paste0("../temp/randomNicheTest--gdd-2-inSphere-", model, '-', experiment, '-', 
+                   ntest, extraName, ".nc")
+    #print(tfile)
     print(tfile)
-    
-    #print(file.exists(tfile))
-    if (file.exists(tfile) && grab_cache) 
+    print(file.exists(tfile))
+    if (file.exists(tfile) && grab_cache) {
         load(tfile)
-    else {        
+        if (exists("inSphere")) return(list(bcranges, test, pMatout, inSphere))
+    }#else { 
+        
         bcranges = selectPossibleNiche(tcen)#lapply(1:3, randomBCrange, id = id)
         
-        test = testNiche(bcranges, ForestCentre, dats, transs)
+        c(test, inSphere) := testNiche(bcranges, ForestCentre, dats, transs)
         pMatout = pMatFind(bcranges)
-        
-        save(bcranges, test, pMatout, file = tfile)
-    }
-    print(test)
-    return(list(bcranges, test, pMatout))
+        writeRaster(inSphere, file = nfile, overwrite = TRUE)
+        save(bcranges, test, pMatout, inSphere, file = tfile)
+    #}
+    #print(test)
+    return(list(bcranges, test, pMatout, inSphere))
 }
-runNicheBoots <- function(...)
-    out = lapply(1:nboots, testRandomNiche, ...)
+runNicheBoots <- function(...){
+    out = c()
+    test = 0
+    i = 0
+    while (test < nniches && i < nboots) {
+        i = i + 1
+        out = c(out, list(testRandomNiche(i, ...)))
+        test = sum(lapply(out, function(i) i[[2]])==3)
+    }
+    print(i)
+    print(test)
+    out = lapply(1:i, testRandomNiche, ...)
+}
 
+###############################
 
-
-
-
-
-
-run4model <- function(model, ForestCentre) {
+run4model <- function(model, ForestCentre, ...) {
     experiments = list.files(paste0(dir, model, '/'))
     run4Exp <- function(experiment) {
         print(model)
@@ -203,11 +206,11 @@ run4model <- function(model, ForestCentre) {
         dats <<- dats
         
         centres = lapply(dats, findBioclimPnts, ForestCentre)
-        
+                                  
         tcen = mapply(function(F,i) F(i), transs, centres)
         
-        out = runNicheBoots(model, experiment, ForestCentre = ForestCentre, tcen = tcen)
-        return(list(out, centres))
+        out = runNicheBoots(model, experiment, ForestCentre = ForestCentre, tcen = tcen, ...)
+        return(list(out, centres, dats))
         
     }
     
@@ -215,24 +218,25 @@ run4model <- function(model, ForestCentre) {
 }
 
 
+##########################
 
 models = list.files(dir)
-models = models[!grepl("bcObs-den", models)]
-model = models[1]
-ForestCentre = ForestCentres[[1]]
+models = models[!grepl("bcObs-den", models)][0:2]
 
 
-experiments = list.files(paste0(dir, model, '/'))
+experiments = list.files(paste0(dir, models[1], '/'))
 experiment = experiments[1]
-outss = mapply(run4model, models, ForestCentres, SIMPLIFY = FALSE)
-browser()
+outsF = mapply(run4model, models, ForestCentres, SIMPLIFY = FALSE)
+
+
+###############
 
 
 
+outsS = mapply(run4model, models, SavannaCentres, SIMPLIFY = FALSE, MoreArgs = list(extraName = 'savanna'))
 
 
-
-
+##################
 
 addAxis <- function(i, side) {
     at = seq(0, 1, length.out = 11)
@@ -252,8 +256,21 @@ addAxis <- function(i, side) {
     axis(side, at = at, labels = labels)
 }
 
+######################'#
+
+out = outsF[[1]][[1]]
+
+pMat = out[[3]][[1]]
+pMat[!is.na(pMat)] = 0
+
+out = out[[1]]
+niches = out[sapply(out, function(i) i[2] == 3)]
+
+for (niche in niches)
+    pMat = pMat + !is.na(niche[[4]])#mapply(function(F, i) F(i), transs, niche)#matrix2list(niche)            
 
 
+##########################
 
 
 x = seq(-1, 1, 0.001)
@@ -299,22 +316,75 @@ plotNichProb <- function(i, j, out) {
     points(xc, yc, pch = 4, col = 'red')
 }
                          
-plotNiches <- function(..., model, experiment)   {                     
-    options(repr.plot.width=12, repr.plot.height=4)
-    par(mfrow = c(1, 3))
-    nn = plotNichProb(1, 2, ...)
-    nn = plotNichProb(2, 3, ...)
-    nn = plotNichProb(3, 1, ...)
+plotNiches <- function(out, ..., model, experiment)   {   
+    options(repr.plot.width=16, repr.plot.height=4)
+    par(mfrow = c(1, 4))
+    nn = plotNichProb(1, 2, out, ...)
+    nn = plotNichProb(2, 3, out, ...)
+    nn = plotNichProb(3, 1, out, ...)
     mtext(side = 4, paste0(model, '-', experiment), line = 1, xpd = TRUE)
-}
+                         
+    pMat = out[[3]][[1]]
+    pMat[!is.na(pMat)] = 0
+    
+    niches = out[[1]][sapply(out[[1]], function(i) i[2] == 3)]
 
+    for (niche in niches)
+        pMat = pMat + !is.na(niche[[4]])
+    pMat = pMat / length(niches)  
+    mar = par("mar"); par(mar = rep(0,4))             
+    plot_raster_from_raster(pMat, x_range = c(-90, -30), y_range = c(-55, 15), cols = c('#110033', 'white'), 
+                       limits = c(0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.9), quick = TRUE,
+                       add_legend = FALSE, e = NULL)
+    par(mar = mar)
+}
+library(maps)
 plotModel <- function(outs, model)
     mapply(plotNiches, outs, experiment = experiments, MoreArgs = list(model = model))
     
                          
-#nn = mapply(plotModel, outss, models)
-#outss[[1]][[1]][[1]]                       
+nn = mapply(plotModel, outsF, models)
+#outss[[1]][[1]][[1]]   
+                         
+#####################
+
+nn = mapply(plotModel, outsS, models)
 
 
 
-                 
+####################
+
+findRefugiaNiche <- function(out) {
+    nichMat = out[[1]][[1]][[3]]
+    #nichMat[] = 0
+    for (mt in out[[1]]) 
+        if (mt[[2]] == 3) nichMat = nichMat + 1-mt[[3]]
+    nichMat[allDmat == 0] = NaN
+    return(nichMat/sum(nichMat, na.rm = TRUE))
+}
+
+
+##################
+
+nichesF = lapply(outsF, lapply, findRefugiaNiche)
+nichesS = lapply(outsS, lapply, findRefugiaNiche)
+
+
+########################
+
+findOutsideRefugia <- function(specDmat, nichMat) sum(sqrt(specDmat *nichMat), na.rm = TRUE)
+nicheAssign <- function(...) sapply(specDmatNorm, findOutsideRefugia, ...)
+
+nicheOLf = lapply(nichesF, lapply, nicheAssign )
+nicheOLs = lapply(nichesS, lapply, nicheAssign )
+nicheOLf[[1]][[1]]
+
+
+################
+
+sapply(nicheOLf, function(i) round(i[[1]]*100,2))
+
+
+##########################
+
+sapply(nicheOLs, function(i) round(i[[1]]*100,2))
