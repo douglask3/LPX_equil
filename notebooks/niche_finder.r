@@ -88,7 +88,7 @@ testNiche <- function(bcranges, ForestCentre, ...) {
      
     ps = lapply(pol@polygons , slot , "Polygons")[[1]]
     coords = lapply(ps, function(x) slot(x, "coords"))
-
+    
     findPntInPol <- function(pnt){
         for (i in 1:length(coords)) {
             test = point.in.polygon(pnt[1], pnt[2], coords[[i]][,1], coords[[i]][,2])
@@ -98,7 +98,9 @@ testNiche <- function(bcranges, ForestCentre, ...) {
     }
     
     Cpols = sapply(ForestCentre, findPntInPol)
-    if (all(is.na(Cpols))) out = 1 else if (any(is.na(Cpols)))  browser() else if (var(Cpols) > 0) out = 3 else out = 4
+    
+    if (all(is.na(Cpols))) out = 0 else if (any(is.na(Cpols)))  browser() 
+        else out = length(unique(Cpols))
     return(c(out, inSphere))
 } 
 
@@ -124,7 +126,7 @@ selectPossibleNiche <- function(tcen) {
     dis = 2 
     id = sample(1:nrow(tcen), 1)
     p = sds = 0
-    #print(tcen); stop()
+   
     while( max(dis) > 1) {
         p = p + 1
         bcranges = lapply(1:3, randomBCrange, continent_range = tcen, id = id)
@@ -156,48 +158,64 @@ pMatFind <- function(info) {
 ###################################################
 
 grab_cache = T
-nboots = 1000
-nniches = 100
+nboots = 500
+nniches = 500
+nniche = 500
+
+#nboots = 50
+#nniches = 50
+#nniche = 5
 testRandomNiche <- function(ntest, model, experiment, ForestCentre, tcen, extraName = '') {
     tfile = paste0("../temp/randomNicheTest--gdd-2-inSphere-", model, '-', experiment, '-', 
                    ntest, extraName, ".Rd")
     nfile = paste0("../temp/randomNicheTest--gdd-2-inSphere-", model, '-', experiment, '-', 
                    ntest, extraName, ".nc")
-    #print(tfile)
     print(tfile)
-    print(file.exists(tfile))
+    
     if (file.exists(tfile) && grab_cache) {
         load(tfile)
-        if (exists("inSphere")) return(list(bcranges, test, pMatout, inSphere))
-    }#else { 
-        
+    } else { 
         bcranges = selectPossibleNiche(tcen)#lapply(1:3, randomBCrange, id = id)
         
         c(test, inSphere) := testNiche(bcranges, ForestCentre, dats, transs)
         pMatout = pMatFind(bcranges)
-        writeRaster(inSphere, file = nfile, overwrite = TRUE)
+        inSphere = writeRaster(inSphere, file = nfile, overwrite = TRUE)
         save(bcranges, test, pMatout, inSphere, file = tfile)
-    #}
-    #print(test)
+    }
+    
     return(list(bcranges, test, pMatout, inSphere))
 }
-runNicheBoots <- function(...){
+
+runNicheBoots <- function(model, experiment, ForestCentre, ...){
     out = c()
     test = 0
     i = 0
-    while (test < nniches && i < nboots) {
+    nRs = rep(0, 5)
+
+    tfile = paste(c('../temp/runNicheBoots', model, experiment, unlist(ForestCentre), 
+                  nniche, nniches, nboots, '.Rd'), collapse = '_')
+    
+    if (file.exists(tfile)) { load(tfile); return(out)}
+    while ((sum(nRs) < nniches || any(nRs[nRs>0] < nniche)) && i < nboots) {
         i = i + 1
-        out = c(out, list(testRandomNiche(i, ...)))
+        outi = testRandomNiche(i, model, experiment, ForestCentre, ...)
+        out = c(out, list(outi))
+        nRs[outi[[2]]+1] = nRs[outi[[2]]+1] + 1
+        print(nRs)
+        
         test = sum(lapply(out, function(i) i[[2]])==3)
     }
     print(i)
     print(test)
-    out = lapply(1:i, testRandomNiche, ...)
+    out = lapply(1:i, testRandomNiche,  model, experiment, ForestCentre)
+    save(out, file = tfile)
+    return(out)
 }
 
 ###############################
 
 run4model <- function(model, ForestCentre, ...) {
+    cat(paste("########", model, '########', '\n'))
     experiments = list.files(paste0(dir, model, '/'))
     run4Exp <- function(experiment) {
         print(model)
@@ -211,9 +229,7 @@ run4model <- function(model, ForestCentre, ...) {
         
         out = runNicheBoots(model, experiment, ForestCentre = ForestCentre, tcen = tcen, ...)
         return(list(out, centres, dats))
-        
     }
-    
     lapply(experiments, run4Exp)
 }
 
@@ -221,19 +237,19 @@ run4model <- function(model, ForestCentre, ...) {
 ##########################
 
 models = list.files(dir)
-models = models[!grepl("bcObs-den", models)][0:2]
+models = models[!grepl("bcObs-den", models)][1:2]
 
 
 experiments = list.files(paste0(dir, models[1], '/'))
 experiment = experiments[1]
-outsF = mapply(run4model, models, ForestCentres, SIMPLIFY = FALSE)
 
+outsF = mapply(run4model, models, ForestCentres[1:2], SIMPLIFY = FALSE)
 
 ###############
 
 
 
-outsS = mapply(run4model, models, SavannaCentres, SIMPLIFY = FALSE, MoreArgs = list(extraName = 'savanna'))
+outsS = mapply(run4model, models, SavannaCentres[1:2], SIMPLIFY = FALSE, MoreArgs = list(extraName = 'savanna'))
 
 
 ##################
@@ -258,17 +274,6 @@ addAxis <- function(i, side) {
 
 ######################'#
 
-out = outsF[[1]][[1]]
-
-pMat = out[[3]][[1]]
-pMat[!is.na(pMat)] = 0
-
-out = out[[1]]
-niches = out[sapply(out, function(i) i[2] == 3)]
-
-for (niche in niches)
-    pMat = pMat + !is.na(niche[[4]])#mapply(function(F, i) F(i), transs, niche)#matrix2list(niche)            
-
 
 ##########################
 
@@ -279,86 +284,124 @@ x = c(x, rev(x)); y = c(y, -rev(y))
 
 
 plotNichProb <- function(i, j, out) {
-    
     centres = out[[2]]
     out = out[[1]]
-    xc = ptranss[[i]](centres[[i]]); yc = ptranss[[j]](centres[[j]])
-    
+
+    centre4plot <- function(k) 
+        ptranss[[k]](centres[[k]])#itranss[[k]](transs[[k]](centres[[k]])))
+
+    xc = centre4plot(i); yc = centre4plot(j)
+    #dev.new()
     plot(xc, yc, xlim = c(0,1), ylim = c(0,1), type = 'n', axes = FALSE, xlab = '', ylab = '')
     addAxis(i, 1)
     addAxis(j, 2)
     mtext(vars[i], side = 1, line = 2)
     mtext(vars[j], side = 2, line = 2)
-    polygon(c(0, 1, 1, 0), c(0, 0, 1, 1), col = '#110033')
-    
+    #polygon(c(0, 1, 1, 0), c(0, 0, 1, 1), col = '#110033')
+    polygon(c(0, 1, 1, 0), c(0, 0, 1, 1), col = 'white')
+
+    xgp = seq(0, 1, 0.01)
+    xg = xgp#logit(xgp)
+    yg = rep(xg, each = length(xg))
+    xg = rep(xg, length(xg))
+    x0 = x
     addPoly <- function(fail, col, nc) {
         info = fail[[1]]
 
+
         shiftScale <- function(x, i){
             #x = logit(x)
-            x = (x*diff(info[[i]])/2 + mean(info[[i]]))
-            x = ptranss[[i]](itranss[[i]](x))
+            x0 = x
+            x = itranss[[1]](transs[[1]](x))
+            x = transs[[i]](pitranss[[i]](x))
+            #browser()
+            x = 2*(x - mean(info[[i]]))/diff(info[[i]])#sqrt((x*diff(info[[i]])/2 + mean(info[[i]]))^2)
+            #browser()
+            #x = (x - mean(info[[i]]) )/diff(info[[i]])
+            #browser()
+            #x = ptranss[[i]](x)#itranss[[i]](x))
         }
-        xt = shiftScale(x, i); yt = shiftScale(y, j)
-        #browser()
+        xt = shiftScale(xg, i); yt = shiftScale(yg, j)
+        return(matrix(sqrt(xt^2 + yt^2), ncol = sqrt(length(xg)))<1)
+        browser()
         #xt = ptranss[[i]](xt); yt = ptranss[[i]](yt)
-        polygon(xt, yt, col = make.transparent(col, min(0.99, 1-1/nc)), border = NA)
+        #polygon(xt, yt, col = make.transparent(col, min(0.99, 1-1/nc)), border = NA)
+        browser()
     }
     
     addPolys <- function(id, col) {
-        con = out[sapply(out, function(i) i[[2]] == id)]                
-        lapply(con, addPoly, col, length(con))
+        con = out[sapply(out, function(i) i[[2]] == id)] 
+        if (length(con) == 0) return()               
+        out = lapply(con, addPoly, col, length(con))
+        outi = out[[1]]
+        for (i in out[-1]) outi = outi + i
+        outi = outi / max(outi)
+        contour(outi, add = TRUE, col = col, levels = c(0.1, 0.5, 0.9), lty = c(3, 2, 1))
     }
     #addPolys(0, 'white')#'#110033')
     #addPolys(2, '#FF0000')
     points(xc, yc, pch = 4, col = 'red')
-    addPolys(3, 'white') 
+    
+    addPolys(1, 'cyan') 
+    addPolys(2, 'blue') 
+    addPolys(3, 'red') 
+    addPolys(4, 'black') 
+
     points(xc, yc, pch = 4, col = 'red')
 }
                          
-plotNiches <- function(out, ..., model, experiment)   {   
-    options(repr.plot.width=16, repr.plot.height=4)
-    par(mfrow = c(1, 4))
+plotNiches <- function(out, ..., model, experiment, fnameID = '')   {   
+    #options(repr.plot.width=16, repr.plot.height=4)
+    png(paste0("../figs/nicheSpace", fnameID, model, experiment, ".png", sep = '-'), 
+        res = 300, units = 'in', height = 8, width = 12)
+    par(mfrow = c(2, 4))
     nn = plotNichProb(1, 2, out, ...)
     nn = plotNichProb(2, 3, out, ...)
     nn = plotNichProb(3, 1, out, ...)
     mtext(side = 4, paste0(model, '-', experiment), line = 1, xpd = TRUE)
-                         
-    pMat = out[[3]][[1]]
-    pMat[!is.na(pMat)] = 0
+    plot.new()
+    for (ni in 1:4)  {          
+        pMat = out[[3]][[1]]
+        pMat[!is.na(pMat)] = 0
     
-    niches = out[[1]][sapply(out[[1]], function(i) i[2] == 3)]
-
-    for (niche in niches)
-        pMat = pMat + !is.na(niche[[4]])
-    pMat = pMat / length(niches)  
-    mar = par("mar"); par(mar = rep(0,4))             
-    plot_raster_from_raster(pMat, x_range = c(-90, -30), y_range = c(-55, 15), cols = c('#110033', 'white'), 
-                       limits = c(0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.9), quick = TRUE,
+        niches = out[[1]][sapply(out[[1]], function(i) i[2] == ni)]
+        if (length(niches) == 0) plot.new()
+        else {
+    
+            for (niche in niches)
+                pMat = pMat + !is.na(niche[[4]])
+            pMat = pMat / length(niches)  
+            mar = par("mar"); par(mar = rep(0,4))             
+            plot_raster_from_raster(pMat, x_range = c(-90, -30), y_range = c(-55, 15), cols = c('#110033', 'white'), 
+                    limits = c(0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.9), quick = TRUE,
                        add_legend = FALSE, e = NULL)
-    par(mar = mar)
+            par(mar = mar)
+        }
+    }
+    dev.off()
 }
 library(maps)
-plotModel <- function(outs, model)
-    mapply(plotNiches, outs, experiment = experiments, MoreArgs = list(model = model))
+plotModel <- function(outs, model, ...)
+    mapply(plotNiches, outs, experiment = experiments, MoreArgs = list(model = model, ...))
     
                          
-nn = mapply(plotModel, outsF, models)
+#nn = mapply(plotModel, outsF, models, fnameID = 'forest')
 #outss[[1]][[1]][[1]]   
                          
 #####################
 
-nn = mapply(plotModel, outsS, models)
+nn = mapply(plotModel, outsS, models, fnameID = 'savanna')
 
 
 
 ####################
 
-findRefugiaNiche <- function(out) {
+findRefugiaNiche <- function(out, ID) {
+    
     nichMat = out[[1]][[1]][[3]]
     #nichMat[] = 0
     for (mt in out[[1]]) 
-        if (mt[[2]] == 3) nichMat = nichMat + 1-mt[[3]]
+        if (mt[[2]] == ID) nichMat = nichMat + 1-mt[[3]]
     nichMat[allDmat == 0] = NaN
     return(nichMat/sum(nichMat, na.rm = TRUE))
 }
@@ -366,9 +409,9 @@ findRefugiaNiche <- function(out) {
 
 ##################
 
-nichesF = lapply(outsF, lapply, findRefugiaNiche)
-nichesS = lapply(outsS, lapply, findRefugiaNiche)
-
+nichesF = lapply(outsF, lapply, lapply, findRefugiaNiche)
+nichesS = lapply(outsS, lapply, lapply, findRefugiaNiche)
+browser()
 
 ########################
 
