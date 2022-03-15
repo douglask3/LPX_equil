@@ -30,40 +30,50 @@ Fmapply <- function(FUNS, rs, SIMPLIFY = FALSE, ...)
         mapply(function(i, j) i(j, ...), FUNS, rs, SIMPLIFY = SIMPLIFY)
 
 
+dRaster <- function(r) {
+    v = as.matrix(r)
+    v[2:nrow(v),] = v[2:nrow(v),] - v[1:(nrow(v)-1),]
+    v[,2:ncol(v)] = v[,2:ncol(v)] - v[,1:(ncol(v)-1)]
+    r[] = v     
+    r
+}
+
+dMaxima <- function(r) {
+    max9 = raster::focal(x = r, fun = function(i) max(i, na.rm = TRUE), 
+                         w = matrix(1, ncol = 3, nrow = 3))
+    r[r == max9]
+}
 
 #####
 centreRangeT = Fmapply(trans, centreRange)
 centreRangeT = lapply(centreRangeT, logistic)
 forModelExperiemnt <- function(model, experiment) {
-    dats = suppressWarnings(lapply(vars, function(i) raster(paste0(dir, '/', model, '/', experiment, '/', i, '.nc'))))
-
-    dats = Fmapply(trans, dats, TRUE)
-    #dats = lapply(dats, logistic)
-
+    dats = suppressWarnings(lapply(vars, function(i) 
+                raster(paste0(dir, '/', model, '/', experiment, '/', i, '.nc'))))
+    varMask <- function(r, i) 
+        r > i[1] & r < i[2]
+    
+    mask = mapply(varMask, dats, centreRange)
+    mask = sum(do.call(addLayer, mask))!=length(dats)
+    
+    datsT = Fmapply(trans, dats, TRUE)
+    
     defineRange <- function() {
         forVar <- function(i, dat) {
 
-            #x0s = rs = c()
-            selecCombo <- function(x) {
-                
+            selecCombo <- function(a, b) { 
+                x = runif(nboots * 100, a, b)
                 ps = logit(x, exp(100))^2
                 logit(sample(x, nboots, TRUE, ps), exp(100))
-
-                #x = sort(x)
-                #xs = c()
-                #for (i in 1:nboots) {
-                #    xi = sample(x, 1,  prob = ps)
-                #    ps = sqrt((xi - x)^2) * ps
-                #    ps = ps/mean(ps)
-                #    xs = c(xs, xi)
-                #}
             }
-            browser()
-            x = logistic(dat[!is.na(dat)])
-            x = x[x>i[1] & x <i[2]]
             
-            x0 = selecCombo(x)
-            r = abs(selecCombo(runif(nboots * 100, 0, 1)))
+            dat[mask] = NaN
+            dat[dat < i[1]] = NaN; dat[dat > i[2]] = NaN
+            ddat = dMaxima(dat)
+            
+            x0 = selecCombo(min(ddat), max(ddat))
+            browser()
+            r = abs(selecCombo(0, 1))
             
             return(cbind(x0, r))       
 
