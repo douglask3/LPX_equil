@@ -1,9 +1,12 @@
+library(rgdal)
+rivers = try(readOGR(dsn = "../data/MajorRivers", layer = "MajorRivers"), silent = TRUE)
+if (class(rivers) == "try-error") rivers = try(readOGR(dsn = "data/MajorRivers", layer = "MajorRivers"), silent = TRUE)
 
+    
 plot_map_standrd <- function(r, cols, limits, readyCut = TRUE, add_legend = FALSE,...) {
     r = crop(r,  c(-108, -33, -60, 25))
-    
     plot_map <- function(colsi, ...) 
-        plot_raster_from_raster(r, cols = colsi, limits = limits, quick = TRUE, readyCut = readyCut, coast.lwd = NULL, add_legend = add_legend,...)
+        plot_raster_from_raster(r, cols = colsi, limits = limits, quick = TRUE, readyCut = readyCut, coast.lwd = NULL, add_legend = add_legend, x_range = c(-83, -33),...)
     
     openResampleMask <- function(file, ...) {
         mask = raster(file)
@@ -24,4 +27,6 @@ plot_map_standrd <- function(r, cols, limits, readyCut = TRUE, add_legend = FALS
 
     mask = openResampleMask(icemaskFile)
     plot_raster_from_raster(mask, col = c('transparent', '#CCCCCC'), limits = c(0.5), coast.lwd = NULL, add = TRUE, quick = TRUE, add_legend = FALSE)
+    lines(rivers, col = "white", lwd = 1)
+    polygon(c(-40, -30, -30, -40), c(-60, -60, -50, -50), col = "white", border = "white")
 }
