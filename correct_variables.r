@@ -1,5 +1,5 @@
-
 source('../gitProjectExtras/gitBasedProjects/R/sourceAllLibs.r')
+sourceAllLibs('../gitProjectExtras/gitBasedProjects/R/', trace = FALSE)
 sourceAllLibs('../rasterextrafuns/rasterPlotFunctions/R/', trace = FALSE)
 sourceAllLibs('../rasterextrafuns/rasterExtras/R/', trace = FALSE)
 
@@ -8,6 +8,9 @@ library(raster)
 library(fields)
 sourceAllLibs("libs/", trace = FALSE)
 graphics.off()
+
+plot2File = TRUE
+
 ##################
 ## setup/params ##
 ##################
@@ -19,20 +22,20 @@ tas_dir =  'data/Figures_doug/Figure 2_6/'
 pattern = '_fon'
 pres = 100
 
-
-mod_files = list.files(mod_dir, pattern = pattern, full.name = TRUE)
-tas_files = list.files(tas_dir, full.names = TRUE) 
 varnames = list(tropical = "tropical", temperate = "temperate", evergreen = "evergreen",
                 gdd = "gdd", height = c("height", "fpc_grid"), fpc = "fpc_grid")
 
-blankFun <- function(i) i
-sumr <- function(...) sum(...)
+logitX <- function(r, ..., X = 120) 
+    logit(r/X, ...)
+    
+logitsticX <- function(r, ..., X = 120)
+    X*logistic(r, ...)
+
+transs  = list(logit, logit, logit, logN, logitX, logit)
+itranss = list(logistic, logistic, logistic, exp, logitsticX, logistic)
+
 levelss = list(c(1:2, 9), c(3:5, 8), c(1, 3, 4, 6), NaN, 1:9, 1:9)
 aggFUNs = list(blankFun, blankFun, blankFun, blankFun, sumr, sumr)
-
-logN <- function(x, n= length(dats[[1]])) log(x+1/n)
-transs  = list(logit, logit, logit, logN, logN, logit)
-itranss = list(logistic, logistic, logistic, exp, exp, logistic)
 
 limitss = list(c(0, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 0.99),
                c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9),
@@ -90,15 +93,27 @@ conn_cols = c('#ffffe5','#f7fcb9','#d9f0a3','#addd8e',
               '#78c679','#41ab5d','#238443','#006837','#004529')
 conn_limits = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)  
 
+
+biome_cols =  c(' ' = 'white'  , Thf = '#002200', Tdf = '#338800',
+                wtf = '#005555', tef = '#00EE33', tdf = '#66DD00',
+                bef = '#000088', bdf = '#330033',
+                Ts  = '#999900', sw  = '#BB9999', tp = '#8844FF', 
+                bp  = '#880088', dg  = '#FFAA00', hd = '#FFFF77', st = '#00AAEE', t = '#99CCFF')
+
 #################
 ## open things ##
 #################
+
+mod_files = list.files(mod_dir, pattern = pattern, full.name = TRUE)
+tas_files = list.files(tas_dir, full.names = TRUE) 
+tas_file = tail(tas_files, 1)
 
 ## site data
 site_dat = read.csv(site_file, stringsAsFactors=FALSE)
 site_dat = as.matrix(site_dat[c("LONGITUDE", "LATITUDE", "POLLEN_TO_LPX_BIOME_NUMBER")])
 site_dat = site_dat[!apply(site_dat, 1, function(i) any(is.na(i))), ]
 site_dat = cbind(site_dat, t(sapply(site_dat[,3], variable_from_biome)))
+
 
 apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlimits1, dlimits2, dcols,
                       trans = function(x) x, itrans = trans, maxLab) {
@@ -115,8 +130,8 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
             #browser()
             datt = sum(dat2)
             dat = dat1*dat2#/datt
-            dat[datt == 0] = 0  
-                              
+            dat[datt == 0] = 0
+                                 
         } else if (varname == 'gdd') {
             dat = 500*(raster(cfile) > 2)
         } else if (varname == "evergreen" || varname == "tropical" || varname == "temperate") {
@@ -135,10 +150,11 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
         dat[dat > 9E9] = NaN
         return(dat)
     }
-    
-    dats = mapply(openDat, mod_files, tas_files, MoreArgs = list(varname))
+                          
+    dats = mapply(openDat, mod_files, tas_file, MoreArgs = list(varname))
     dats = c(dats, mean(layer.apply(dats, function(i) i )))
-      
+                                    
+                                          
 #########################
 ## perform corrections ##
 #########################
@@ -146,16 +162,10 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
         if (varname == "fpc_grid") dat[dat > 1] = 1
         rxy = xyFromCell(dat, 1:length(dat))
         getCell <- function(xy) {
-
-            #removeQM <- function(x) if (substr(x, 1,1) = "?") x = substr(x, 2, nchar9x)
-            sqd = (rxy[,1]-as.numeric(xy[1]))^2 + (rxy[,2] - as.numeric(xy[2]))^2
+            sqd = (rxy[,1]-xy[1])^2 + (rxy[,2] - xy[2])^2
             dif = sqrt(sqd)
-            
             index = which.min(dif)
-            out = c(rxy[index,], dat[index])
-            #print(length(out))
-            if (length(out) != 3) browser()
-            return(out)
+            c(rxy[index,], dat[index])
         }
 
         mod = apply(site_dat[,1:2], 1, getCell)
@@ -164,8 +174,11 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
         calDif <- function(x) {
             x0 = x
             if (any(is.na(x))) return(NaN)
-            x = trans(as.numeric(x), length(dats[[1]]))
-            
+            print(x)
+            print(length(dats[[1]]))
+            x = trans(x, length(dats[[1]]))
+            print(x)
+            #print(trans)
             if (x[1] < x[2]) out = (x[1] - x[2])
             else if (x[1] > x[4])  out = (x[1] - x[4])
             else out = 0
@@ -193,10 +206,12 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
     zscores = lapply(dats, zscoring)
     czscore = lapply(cdat, zscoring)
     
-    if (T) {
-    png(paste0("figs/", name, "_correction.png"), width = 7.2, height = 10, 
-        res = pres, units = 'in')
+    if (plot2File) 
+        png(paste0("figs/", name, "_correction.png"), width = 7.2, height = 10, 
+            res = pres, units = 'in')
+    else options(repr.plot.width=7.2, repr.plot.height=10)
     par(mfrow = c(6, length(dats)), mar = rep(0, 4), oma = c(0, 0, 2, 2))
+        
 #########################
 ## Plot variable       ##
 #########################
@@ -224,7 +239,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
     lapply(cors, plotMap, limits = dlimits1, cols = dcols)
     mtext(side = 4, 'bias')
     plotLeg(cols = dcols, limits = dlimits1)
-
+                             
     lapply(cdat, plotMap, limits = limits, cols = cols, addContour = TRUE)
     mtext(side = 4, 'corrected output') 
     plotLeg(cols = cols, limits = limits)
@@ -236,17 +251,19 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
     lapply(czscore, plotMap, limits = zlimits, cols = zcols)
     mtext(side = 4, 'corrected z score')
     plotLeg(cols = zcols, limits = zlimits)
-    dev.off()
-    }
+    if (plot2File) dev.off()
+    
     return(list(zscores, czscore, dats, cdat))
-}
+}   
 
 ##############################
 ## Connectivity score       ##
 ##############################
 zscores = mapply(apply2Var,  varnames, names(varnames), levelss, aggFUNs,
                  limitss, contours, colss, dlimitss1, dlimitss2, dcolss,
-                  transs, itranss, maxLab)
+                 transs, itranss, maxLab)
+
+browser()
 
 plot_biomes <- function(r, name, tpoints = TRUE) {  
     
