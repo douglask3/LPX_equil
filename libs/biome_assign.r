@@ -22,7 +22,7 @@ variable_from_biome <- function(id, gdd_threshold = 350, veg_treshold = c(0.6, 0
     else if (id <=11)
         height = c(0,5, 10)
     else height = c(0, NaN, 120)
-
+    if (id == 15) height = c(0, 2.5, 5)
     names(height) = paste0("height-", c("Min", "Mid", "Max"))
 
     if (id == 6 || id == 7 || id == 11 || id == 14 || id == 15) 
@@ -71,7 +71,7 @@ biome_assign_precalV <- function(fpc, eg, tr, tm, gdd, height) {
     
     fpc = cut_results(fpc, c(0.3, 0.6))
     gdd = cut_results(gdd, 350)
-    height = cut_results(height, 10)
+    height = cut_results(height, 10.5)
     
     #bl = cut_results(tr + tm, 0.5)
     #bl[gdd ==2] = 2
