@@ -1,6 +1,6 @@
 legendColBar <- function(xx = c(0.3, 0.7), yy = c(0.1, 0.9), cols, limits, switch = FALSE,
                              extend_max = TRUE, extend_min = TRUE, minLab = '', maxLab = '',
-                             transpose = FALSE, oneSideLabels = TRUE, add = FALSE) {
+                             units = '', transpose = FALSE, oneSideLabels = TRUE, add = FALSE) {
         if (!add) plot(c(0, 1), c(0, 1), axes = FALSE, type = 'n')
         cols = make_col_vector(cols, ncols = length(limits)+1)
         ys = seq(yy[1], yy[2], length.out = length(cols) +1)
@@ -31,11 +31,11 @@ legendColBar <- function(xx = c(0.3, 0.7), yy = c(0.1, 0.9), cols, limits, switc
         
         if (!extend_min && minLab == "" && limits[1] == 0) y[2] = mean(y[1:2])
         limits = c(minLab, limits, maxLab)
-        
+        limits[limits != ''] = paste0(limits[limits != ''], units)
         x = rep(xx[2] + diff(xx) *0.3, length(y))
         if (is.na(oneSideLabels)) xx = xx[1] - diff(xx) *0.3
         else if (!oneSideLabels) x[seq(1, length(x), by = 2)] = xx[1] - diff(xx) *0.3
         
         if (transpose) { xi = x; x = y; y = xi}
-        text(x, y, limits, xpd = NA, adj = 0)
+        text(x, y, limits, xpd = NA, adj = 0.5)
     }
