@@ -286,7 +286,7 @@ png("figs/bias_corrected_biome.png", height = 11, width = 11,  units = 'in', res
 lmat = t(matrix(1:10, nrow= 2))
 layout(rbind(cbind(lmat, lmat + 10, lmat +20), 31), widths = c(1, 1.5, 1, 1.5, 1, 1.5))
 par(mar = rep(0, 4), oma = c(0, 4, 2, 1))
-plotBiomes <- function(modid, corid) {
+plotBiomes <- function(modid, corid, tall.cex = 0.2, summPlot = FALSE, letter = c('', '')) {
     if (corid > 2) {
         rs = lapply(zscores[4,], function(i) i[[modid]])
         mask = !is.na(rs[['fpc']])
@@ -301,13 +301,16 @@ plotBiomes <- function(modid, corid) {
         biome = rs[[1]]
         
         clusters = kmeans(dat[,c( 5:6)], 4, 200)#, algorithm = "Lloyd")
-        order = sort.int(clusters$centers[, 'fpc'], 
+        
+        order = sort.int(clusters$centers[, 'height'] + clusters$centers[, 'fpc'], 
                          decreasing = TRUE, index.return = TRUE)[[2]]
         
         biome[mask] = apply(sapply(order, function(i) clusters[[1]] == i), 1, which)
         
         plot_map_standrd(biome, c('#7570b3', '#1b9e77','#d95f02', 'grey'), 0.5 + (1:3))
-       if (modid == 1)  mtext.units("clustered", adj = 0.9, line = -2)         
+        if (modid == 1 || summPlot == TRUE)   mtext.units("clustered", adj = 0.9, line = -2)
+        mtext(side = 1, letter[1], line = -2.5, adj = 0.67)
+        grid()
 #indexFUN <- function(i) {
         #    sort.int(biomes$centers[,i], index.return = TRUE, 
         #                                 decreasing=TRUE)[[2]]
@@ -329,27 +332,29 @@ plotBiomes <- function(modid, corid) {
         dat = lapply(zscores[2 + corid,], function(i) i[[modid]])
         biome = biome_assign_precalV(dat[["fpc"]], dat[["evergreen"]], dat[["tropical"]],
                             dat[["temperate"]], dat[["gdd"]], dat[["height"]])
-        if (modid == 1) modName = c('uncorrected', 'corrected')[corid] else modName = ''
+        if (modid == 1 || summPlot == TRUE) 
+            modName = c('uncorrected', 'corrected')[corid] else modName = ''
         if (corid==1) tpoints = TRUE else tpoints = FALSE
         plot_biomes(biome+1, modName, tpoints)    
         test = test0 = (biome ==1) | (biome == 8 & dat[["height"]]>5)  
         test = round(raster::aggregate(test, 2))>0
-   
+        mtext(side = 1, letter[1], line = -2.5, adj = 0.67)
         xyt = xyFromCell(test, which(test[]))
-        points(xyt[,1], xyt[,2], cex = 0.2, col = biome_cols[2], pch = 19)
+        points(xyt[,1], xyt[,2], cex = tall.cex, col = biome_cols[2], pch = 19)
     }
     
-    if (corid == 1) mtext(side = 2, modnames[modid], line = 2, ad = 0.8)    
+    if (!summPlot && corid == 1) mtext(side = 2, modnames[modid], line = 2, ad = 0.8)    
     if (corid==1) axis(2)# else axis(4)
     #if (modid==1) axis(3)
     if (modid==length(zscores[[1,1]])) axis(1)
     
-    par(mar = c(0.0, 3, 1, 0.1))
+    if (summPlot) par(mar = c(1, 0.0, 2, 0.5)) else par(mar = c(1, 3, 2, 0.5))
 
     x = logit(dat[['fpc']][], n = 100); y = log(dat[['height']][] + 0.001)
     
     plot(x, y, type = 'n', axes = FALSE, xlab = '', ylab = '',
         xlim = logit(c(0,1), n= 100), ylim = log(c(0, 60)+0.001))
+    mtext(side = 3, letter[2], line = -1.5, adj = 0.1)
     addPoints <- function(fpcRange, heightRange = NULL, col) {
         
         if (length(fpcRange) == 2) {
@@ -384,18 +389,24 @@ plotBiomes <- function(modid, corid) {
     }
     labs = c(0, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 0.99, 1)
     axis(1, at = logit(labs, n = 100), labels = labs)
-    if ((modid) == length(zscores[[1,1]])) 
-        mtext(side = 1, line = 2, 'Fractional cover') 
-    if (modid == 3)  mtext(side = 2, line = 2, 'Height (m)') 
     
+    if (summPlot) {
+        if (corid == 2)  mtext(side = 1, line = 2, 'Fractional cover')
+        if (corid == 1)  mtext(side = 2, line = 2, 'Height (m)')  
+    } else {
+        if ((modid) == length(zscores[[1,1]])) 
+            mtext(side = 1, line = 2, 'Fractional cover') 
+        if (modid == 3)  mtext(side = 2, line = 2, 'Height (m)') 
+    }
     labs = c(0, 0.1, 1, 2, 5, 10, 20, 50)
-    axis(2, at = log(labs + 0.001), labels = labs)
+    if (!summPlot || (summPlot && corid == 1)) axis(2, at = log(labs + 0.001), labels = labs)
+    if (summPlot && corid == 3) axis(4, at = log(labs + 0.001), labels = labs)
     par(mar = rep(0, 4))
     #browser()
     #hist(dat[['height']][dat[['height']]>1], 100, axes = F, 
     #     xlab = '', ylab = '', main = '', xlim = c(0, 60)) 
     #axis(1)
-     
+    #
     return(biome)
 }
 biomes = lapply(1:3, function(cid) lapply(1:length(zscores[[1,1]]), plotBiomes, cid))
@@ -405,6 +416,63 @@ legend('center', col = biome_cols, legend = names(biome_cols), pch = 15, ncol = 
        bty = 'n')
 dev.off()
 }
+
+
+writeBiome <- function(biome,model, name1) {
+    file = paste0("../outputs/", model, "/",name1)
+    makeDir(file)
+    file = paste0(file, "/biome.nc")
+    print(file)
+    writeRaster(biome, file, overwrite = TRUE)
+}
+
+writeExperiment <- function(biomesi, ...)
+    mapply(writeBiome, biomesi, modnames, MoreArgs = list(...))
+   
+biomes = mapply(writeExperiment, biomes, c('uncorrected', 'corrected', 'clusted'))
+
+
+outputDat <- function(modid, corid) {
+    dat = lapply(zscores[2 + corid,], function(i) i[[modid]])
+    
+    dir = paste0("../outputs/", modnames[modid])
+    makeDir(dir)
+    dir = paste0(dir, '/', c('uncorrected', 'corrected')[corid])
+    makeDir(dir)             
+    
+    outputVar <- function(varname) {
+        file = paste0(dir, '/', varname, ".nc")
+        writeRaster(dat[[varname]], file = file, overwrite = TRUE)
+    }
+    lapply(c("fpc", "evergreen", "tropical", "temperate", "gdd", "height"), outputVar)
+    return(dat[["height"]])   
+    
+}
+heights = lapply(1:2, function(cid) lapply(1:length(zscores[[1,1]]), outputDat, cid))
+save(biomes, heights, file = 'outputs/biomes.Rd')
+
+
+png("figs/bias_corrected_biome-ens.png", height = 7, width = 8,  units = 'in', res = pres)
+
+layout(cbind(c(1, 1, 1, 2), c(3, 3, 3, 4), c(3, 3, 5, 4), c(6, 6, 6, 7), c(8, 6, 9, 7)), 
+    widths = c(1, 0.6, 0.4, 0.6, 0.4), height = c(0.35, 0.15, 0.35, 0.5))
+par(mar = rep(0, 4), oma = c(3, 3.5, 0.5, 2.5))
+lapply(1:2, function(cid) plotBiomes(length(zscores[[1,1]]), cid, tall.cex = 0.5, 
+        summPlot = TRUE, letter = list(c('a', 'd'), c('b', 'e'))[[cid]]))
+plot.new()
+
+legend('center', col = biome_cols, legend = names(biome_cols), pch = 15, ncol = 2, pt.cex = 3,
+       bty = 'n')
+plotBiomes(length(zscores[[1,1]]), 3, summPlot = TRUE, letter = letters[c(3, 6)])
+
+plot.new()
+# legend('center', col = c('#7570b3', '#1b9e77'), legend = c('Dense Forest', 'Sparse Forest'), pch = 15, pt.cex = 3,  bty = 'n')
+plot.new()
+ legend('center', col = c('#7570b3', '#1b9e77', '#d95f02', 'grey'), 
+        legend = c('Dense Forest', 'Sparse Forest', 'Savanna/grass', 'Desert'), pch = 15, pt.cex = 3,  bty = 'n')
+dev.off()
+browser()
+
 start = c(-70, 0)
 
 j0 = colFromX(zscores[[1,1]][[1]], start[1])
