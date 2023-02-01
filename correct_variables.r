@@ -188,6 +188,7 @@ apply2Var <- function(varname, name, levels, aggFUN, limits, contour, cols, dlim
         
         xy = t(mod)[,1:2]
         ra = rasterFromXYZ(cbind(xy, dif))
+        
         tps = Tps(xy, dif, lon.lat = TRUE) 
         
         #p = raster(dat)
@@ -432,7 +433,7 @@ writeExperiment <- function(biomesi, ...)
 biomes = mapply(writeExperiment, biomes, c('uncorrected', 'corrected', 'clusted'))
 
 
-outputDat <- function(modid, corid) {
+outputDat <- function(modid, corid, returnVar = "height") {
     dat = lapply(zscores[2 + corid,], function(i) i[[modid]])
     
     dir = paste0("../outputs/", modnames[modid])
@@ -445,12 +446,15 @@ outputDat <- function(modid, corid) {
         writeRaster(dat[[varname]], file = file, overwrite = TRUE)
     }
     lapply(c("fpc", "evergreen", "tropical", "temperate", "gdd", "height"), outputVar)
-    return(dat[["height"]])   
+    return(dat[[returnVar]])   
     
 }
 heights = lapply(1:2, function(cid) lapply(1:length(zscores[[1,1]]), outputDat, cid))
-save(biomes, heights, file = 'outputs/biomes.Rd')
+fpcs = lapply(1:2, function(cid) lapply(1:length(zscores[[1,1]]), outputDat, cid, "fpc"))
 
+save(biomes, heights, fpcs, file = 'outputs/biomes.Rd')
+print("yay")
+browser()
 
 png("figs/bias_corrected_biome-ens.png", height = 7, width = 8,  units = 'in', res = pres)
 
