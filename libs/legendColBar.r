@@ -8,7 +8,7 @@ legendColBar <- function(xx = c(0.3, 0.7), yy = c(0.1, 0.9), cols, limits, switc
             print(yi)
             polyFun <- function(x, y) {
                 if (transpose) {xi = x; x = y; y = xi}
-                    polygon(x, y, col = col, lwd = 2, xpd = TRUE)
+                    polygon(x, y, col = col, lwd = 2, xpd = NA)
             }
             F1 <- function() polyFun(c(xx, mean(xx), xx[1]), c(y2, y2, y1, y2))
             F2 <- function() polyFun(c(xx, mean(xx), xx[1]), c(y1, y1, y2, y1))
